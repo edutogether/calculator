@@ -284,7 +284,7 @@ input[type=radio]{accent-color:var(--acc);width:15px;height:15px;cursor:pointer}
   border:0;border-radius:50%;background:var(--sunk);color:var(--mut);
   font-size:12px;line-height:26px;padding:0;text-align:center}
 .dlg button.x:hover{background:var(--line);color:var(--ink)}
-.optbox{margin-top:12px;max-height:min(56vh,420px);overflow:auto;
+.optbox{margin-top:12px;max-height:min(56vh,420px);overflow:auto;overscroll-behavior:contain;
   border:1px solid var(--line2);border-radius:9px}
 .optbox .opt{display:grid;grid-template-columns:18px 1fr 92px 64px;gap:10px;align-items:center;
   padding:11px 13px;border-bottom:1px solid var(--line2);font-size:13px;cursor:pointer;margin:0}
@@ -376,6 +376,18 @@ html:not(.js) .tabbar,html:not(.js) .wrap{display:none !important}
   78%{opacity:1;transform:translate(-50%,0)}
   100%{opacity:0;transform:translate(-50%,6px)}}
 @media(min-width:901px){.wrap{padding-bottom:26px}}
+
+/* 움직임을 줄여 달라고 설정한 사용자에게는 움직임만 뺀다 — 기능은 그대로 남긴다.
+   특히 안내 말풍선은 tipPop이 투명도를 0에서 1로 올려 보여주는 구조라, 애니메이션만
+   끄면 영영 안 보인다. 그래서 «끄기»가 아니라 «보이는 상태로 고정»이다.
+   _shared/CONVENTIONS.md §5.6-2 */
+@media(prefers-reduced-motion:reduce){
+  .gauge i{transition:none}
+  .flash{animation:none}
+  .nojs .btns a{transition:none}
+  .nojs .btns a:hover .tip,.nojs .btns a:focus .tip,.nojs .btns a:active .tip{
+    animation:none;opacity:1;transform:translate(-50%,0)}
+}
 </style>
 <div class="top"><div class="in">
   <div><h1>InKY Cinema Festival 견적 같이뽑아요 💛</h1>
