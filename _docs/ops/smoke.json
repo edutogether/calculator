@@ -1,0 +1,24 @@
+{
+  "$comment": "배포 후 검증용 주요 화면 선언 (_shared/CONVENTIONS.md §3.5). 화면 문구를 바꾸면 이 파일의 expect도 같은 커밋에서 고친다.",
+  "baseUrl": "https://calc.edutogether.kr",
+  "screens": [
+    {
+      "name": "첫 화면 (견적)",
+      "path": "/",
+      "expect": [
+        "InKY Cinema Festival 견적 같이뽑아요",
+        "체험 부스 구매 목록"
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "screen": "부스별 탭(공통·Poster Studio·Voice Cinema·Face Painting·잔상 원리·협의회)",
+      "reason": "같은 URL 안의 탭이고, 부스 구성이 행사 준비에 따라 바뀐다."
+    },
+    {
+      "screen": "품목명·단가·합계 금액",
+      "reason": "견적은 계속 갱신되는 실데이터라 expect로 쓰면 안 된다."
+    }
+  ]
+}
