@@ -11,7 +11,7 @@
 - **저장소**: `github.com/edutogether/calculator` (2026-09-08 생성, public. 2026-09-17
   `inky-calculator` → `calculator`로 개명 — 형제 앱(poster-studio·voice-cinema)과 저장소
   이름 규칙을 맞췄다. `inky-` 접두어는 Firebase 프로젝트·사이트 ID에만 남는다)
-- **폴더**: `D:\Projects\inky-festival\inky-calculator`
+- **폴더**: `D:\Projects\inky-festival\calculator`
   (처음엔 `edutogether/` 아래 만들었다가 형제 앱과 맞추려고 옮김. GitHub 저장소 이름은 `edutogether/calculator`다)
 - **라이브**: https://calc.edutogether.kr (Firebase Hosting, 프로젝트·사이트 모두 `inky-calculator`.
   `https://inky-calculator.web.app` 으로도 같은 것이 열린다)
