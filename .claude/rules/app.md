@@ -14,7 +14,7 @@
 - 배포: **Firebase Hosting**(프로젝트 `inky-calculator`, 사이트 `inky-calculator`).
   공개 주소는 **`https://calc.edutogether.kr`**(2026-09-09 전환 완료).
   옛 GitHub Pages 주소는 내리는 중이다 — **코드에는 한 곳도 없고**, 문서에는 이력 서술로만 남아 있다.
-- 수명: **2026-11-15까지만 운영한다**(대표 결정). 그날 예약 작업 `inky-calculator-archive`가 정리한다.
+- 수명: **2026-11-15까지만 운영한다**(대표 결정). 그날 예약 작업 `calculator-archive`가 정리한다.
 
 ## 🟡 이 앱은 Firebase SDK를 쓰지 않는다 — 주소 바꾸는 절차가 다른 앱과 다르다
 

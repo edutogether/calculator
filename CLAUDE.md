@@ -1,4 +1,4 @@
-# CLAUDE.md — inky-calculator (InKY Calculator)
+# CLAUDE.md — InKY Calculator
 
 표시: 🔴 어기면 실사용자 화면이 깨지거나 개인정보가 샌다 · 🟠 중간 · 🟡 낮음 · 🟢 확인 끝남 (COMMON_STANDARDS §30)
 
@@ -8,9 +8,11 @@
 
 ## 정체성
 
-- **저장소**: `github.com/edutogether/inky-calculator` (2026-09-08 생성, public)
+- **저장소**: `github.com/edutogether/calculator` (2026-09-08 생성, public. 2026-09-17
+  `inky-calculator` → `calculator`로 개명 — 형제 앱(poster-studio·voice-cinema)과 저장소
+  이름 규칙을 맞췄다. `inky-` 접두어는 Firebase 프로젝트·사이트 ID에만 남는다)
 - **폴더**: `D:\Projects\inky-festival\inky-calculator`
-  (처음엔 `edutogether/` 아래 만들었다가 형제 앱과 맞추려고 옮김. GitHub 저장소 이름은 `edutogether/inky-calculator` 그대로다)
+  (처음엔 `edutogether/` 아래 만들었다가 형제 앱과 맞추려고 옮김. GitHub 저장소 이름은 `edutogether/calculator`다)
 - **라이브**: https://calc.edutogether.kr (Firebase Hosting, 프로젝트·사이트 모두 `inky-calculator`.
   `https://inky-calculator.web.app` 으로도 같은 것이 열린다)
 - **클로드 아티팩트**: https://claude.ai/code/artifact/97501810-a6b8-4174-a488-a58cb62cb0f8
@@ -20,7 +22,7 @@
   `tests/`)은 배포 전 검사(vitest·`check-*.js`)를 돌리기 위한 개발 도구다. `main`에
   push하면 GitHub Actions가 그 검사를 돌린 뒤 Firebase Hosting에 배포한다.
 - **⚠️ 수명**: **2026-11-15까지만 필요하다**(대표 결정). 그날 예약 작업이 자동으로 Pages를 내리고
-  저장소를 아카이브한다(예약 작업 `inky-calculator-archive`). 그 전까지만 운영한다.
+  저장소를 아카이브한다(예약 작업 `calculator-archive`). 그 전까지만 운영한다.
 - **종합감사 주기**(COMMON_STANDARDS §25): 정기 종합감사는 **분기 말(3·6·9·12월 말)**에
   org 여덟 저장소가 같은 날 돈다 — **다음은 2026-09-30.** 그 사이에는 **대표님 지시가 있을
   때만** 돌리고, 세션이 먼저 제안하지 않는다(§19). **10/10이 뜨면 이 앱은 개발을 멈추고
