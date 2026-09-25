@@ -269,3 +269,26 @@ describe('시나리오 11 — 가져오기(엑셀)로 들어온 조작된 값도
     expect(ev(win, "D.find(it=>it.n==='포켓 Wi-Fi').qty")).toBe(3);
   });
 });
+
+describe('시나리오 12 — 아티팩트 흔적이 없다(2026-09-25 대표 결정으로 제거)', () => {
+  /* 대표님: "아티팩트 빼 버려. 웹사이트만 남겨 놓자." 열리는 경로는 호스팅·내려받은 파일·
+   * 카톡 미리보기 셋뿐이다. 아티팩트로 보내는 단추나 아티팩트에서만 돌던 분기가 다시 들어오면
+   * 여기서 막는다 — 아티팩트 페이지 자체가 지워지므로, 남은 단추는 빈 페이지로 간다. */
+  it('카톡 카드(#nojs) 단추는 Safari·Chrome 둘뿐이고, 둘 다 호스팅 주소로 간다', () => {
+    const win = loadApp();
+    const links = [...win.document.querySelectorAll('#nojs .btns a')];
+    expect(links.map(a => a.getAttribute('aria-label'))).toEqual(['Safari에서 열기', 'Chrome에서 열기']);
+    expect(links.map(a => a.getAttribute('href'))).toEqual([
+      'x-safari-https://calc.edutogether.kr/',
+      'googlechromes://calc.edutogether.kr/',
+    ]);
+  });
+
+  it('문서 어디에도 claude.ai 주소·아티팩트 전용 요소가 없다', () => {
+    const win = loadApp();
+    const html = win.document.documentElement.outerHTML;
+    expect(html.length).toBeGreaterThan(10000); // 문서를 제대로 읽었는지부터
+    expect(html).not.toMatch(/claude\.ai|artifact|아티팩트|claude\.use/i);
+    for (const id of ['dlgL', 'dlgCopy', 'dlgOpen']) expect(win.document.getElementById(id)).toBeNull();
+  });
+});
