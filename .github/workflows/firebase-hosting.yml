@@ -1,6 +1,7 @@
 # main 에 push 되면 검사(test) → 배포(deploy) 순으로 돈다.
-# 배포 전에 CSP 해시 검사를 먼저 돌린다 — index.html 을 고치고 firebase.json 의 해시를
-# 갱신하지 않은 채 배포하면 호스팅된 화면이 통째로 죽기 때문에, 그 경우 배포를 멈춘다.
+# 배포 전에 CSP 해시 검사를 먼저 돌린다 — 배포될 dist/index.html 의 인라인 블록이 바뀌었는데
+# firebase.json 의 해시를 갱신하지 않은 채 배포하면 호스팅된 화면이 통째로 죽기 때문에,
+# 그 경우 배포를 멈춘다. 배포 산출물은 Vite 빌드 결과(dist/)다.
 #
 # test/changes/deploy 세 잡으로 나눈 이유(COMMON_STANDARDS §23, 2026-09-10, §23-3 정정):
 # 문서(.md·_docs/·.claude/) 한두 줄만 고쳐도 매번 배포까지 돌고 있었다. 배포는
@@ -33,12 +34,22 @@ jobs:
           # 검사 스크립트를 돌릴 Node. 20 은 2026-04 로 지원이 끝나 러너와 같은 24 로 맞춘다.
           node-version: '24'
 
-      # vitest 의존성(devDependencies) 설치 — 배포 산출물이 아니라 검사용이라
-      # firebase.json 의 ignore 목록에서 node_modules·package.json·tests/ 를 뺐다.
-      - name: 검사 의존성 설치
+      # 빌드·검사 의존성(devDependencies) 설치 — 배포되는 것은 dist/ 뿐이다.
+      - name: 의존성 설치
         run: npm ci
 
-      - name: CSP 해시가 index.html 과 맞는지 검사
+      # 앱 소스(src/, TypeScript strict)의 타입 — 틀리면 빌드 전에 멈춘다.
+      - name: 타입 검사 (tsc)
+        run: npm run typecheck
+
+      # 검사·테스트·대조 도구(JS)의 실수 — 안 쓰는 변수, 정의 안 된 이름.
+      - name: 린트 (eslint)
+        run: npm run lint
+
+      - name: 빌드 (dist/)
+        run: npm run build
+
+      - name: CSP 해시가 배포될 dist/index.html 과 맞는지 검사
         run: node scripts/check-csp.js
 
       # 첫 화면(권장안)이 협의회비 상한 비율을 지키는지 — 어기면 배포하지 않는다.
@@ -55,8 +66,8 @@ jobs:
 
       # 2026-09-09에 손으로 눌러 확인한 7가지 상황(부호 양쪽·0원 경계값·집행률/게이지 색·
       # 구분 번호·자동 계산·주소 왕복)과 조작된 입력값 방어를 vitest 로 고정했다
-      # (tests/scenarios.test.js). index.html 을 jsdom 에 그대로 실행시켜 render() 가
-      # 그리는 화면까지 검사한다 — 문서(.md)는 이 테스트의 대상이 아니다.
+      # (tests/scenarios.test.js). 배포될 dist/index.html 을 jsdom 에 그대로 실행시켜, 사람처럼
+      # 치고 눌러 화면에 그려진 값을 검사한다(앱 내부를 건드리지 않는다) — 문서(.md)는 대상이 아니다.
       - name: 시나리오 테스트 (vitest)
         run: npm test
 
@@ -124,6 +135,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      # firebase.json 의 public 이 dist 라, 이 잡에서도 같은 커밋으로 다시 빌드한다.
+      # test 잡이 검사한 것과 같은 산출물인지는 아래 헤더·공유 카드 라이브 확인과
+      # check-csp.js(빌드가 결정적이라 같은 커밋이면 같은 바이트)로 담보한다.
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 빌드 (dist/)
+        run: npm run build
+
+      - name: 배포할 산출물의 CSP 해시 재확인
+        run: node scripts/check-csp.js
 
       - name: Firebase Hosting 에 배포
         uses: FirebaseExtended/action-hosting-deploy@v0

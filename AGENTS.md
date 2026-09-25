@@ -5,7 +5,12 @@
 
 ## 저장소 요약
 
-- `index.html` **한 파일이 전부다.** 빌드·번들·의존성 설치 없음. 나머지 파일은 배포·검사 설정이다.
+- **React 19 + TypeScript(strict) + Vite**(2026-09-25 전환). 소스는 `src/`, 빌드하면
+  **`dist/index.html` 한 파일에 로직·스타일이 전부 인라인**으로 들어간다(+ `dist/og.jpg`).
+  이 "파일 하나"는 요구사항이다 — 카톡으로 받은 HTML 파일을 내려받아 그대로 열어도 돌아야 한다.
+  `build/inline-app.mts`가 번들을 `index.html`의 원래 자리(`<!--inline:app-->`)에 **클래식 인라인
+  `<script>`**로 넣는다. 빌드 설정을 바꿔 `assets/*.js` 같은 별도 파일이 생기면 내려받은 파일이 빈 화면이 된다.
+- CSS는 `index.html` 안의 인라인 `<style>` 그대로다(Vite가 한 글자도 바꾸지 않게 설정해 뒀다 — `vite.config.mts`).
 - **라이브: https://calc.edutogether.kr** — 공식 주소다. Firebase Hosting(프로젝트·사이트 모두
   `inky-calculator`)이 서빙하고, `https://inky-calculator.web.app` 으로도 같은 것이 열린다.
 - 옛 주소 `edutogether.github.io/inky-calculator`(GitHub Pages)는 **내리는 중이다.**
@@ -59,20 +64,21 @@ GitHub Pages는 응답 헤더를 줄 수 없어 HTML에 `Cache-Control: max-age=
 사라졌으니 **다시 만들지 말 것** — 캐시 문제가 보이면 버전 값을 붙이는 게 아니라
 응답 헤더를 확인한다(`node scripts/check-headers.js https://calc.edutogether.kr/`).
 
-## 4. `index.html`을 고치면 `firebase.json`의 CSP 해시도 같이 고쳐야 한다
+## 4. 인라인 블록이 바뀌면 `firebase.json`의 CSP 해시도 같이 고쳐야 한다
 
 Firebase Hosting이 응답 헤더로 CSP를 준다. 이 앱은 CSS·JS를 밖으로 뺄 수 없어서(1번 참고 —
 카톡으로 보낸 **파일 한 개**가 그대로 동작해야 한다) 인라인 블록마다 **sha256 해시**를
 `firebase.json`에 적어 두는 방식을 쓴다. 그래서:
 
-> **`index.html`의 인라인 `<style>`·`<script>` 안을 한 글자라도 고치면 해시가 달라진다.**
+> **배포되는 `dist/index.html`의 인라인 `<style>`·`<script>`가 한 글자라도 바뀌면 해시가 달라진다.**
+> `src/`의 코드를 고치면 번들(인라인 `<script>`)이 바뀌므로 **거의 매번** 해당한다.
 > 갱신하지 않고 배포하면 **호스팅된 화면이 통째로 죽는다**(스크립트가 전부 차단된다).
 
 혼자 조용히 나지 않도록 검사를 붙여 뒀다. **고친 뒤 반드시 돌릴 것** — 배포 워크플로도 이걸
 먼저 돌리고 실패하면 배포를 멈춘다. 새 해시 값을 이 명령이 그대로 알려 준다.
 
 ```
-node scripts/check-csp.js
+npm run build && node scripts/check-csp.js
 ```
 
 같은 이유로 **인라인 `style="…"` 속성과 `onclick=` 같은 인라인 핸들러를 새로 만들지 말 것.**
@@ -85,24 +91,34 @@ CSP가 차단한다. 스타일은 `<style>` 블록에 규칙으로 넣고, 핸�
 
 - **줄바꿈**: 줄바꿈은 `.gitattributes`가 **LF로 못박아** 둔다 — CSP 해시가 파일 바이트에
   걸려 있어 체크아웃 환경에 따라 CRLF가 되면 배포된 화면이 죽기 때문이다. 이 설정을 풀지 말 것.
-- **견적 상태 공유**: `stateStr()` 이 현재 화면 상태(항목 on/off·선택 상품·수량·협의회 설정)를
-  base64로 압축해 주소에 싣고, `applyState()` 가 `#q=…` 로 들어온 주소를 복원한다.
-  항목 37개 기준 전체 주소 약 500자.
+- **견적 상태 공유**: `stateStr()`(`src/share-state.ts`)이 현재 화면 상태(항목 on/off·선택 상품·
+  수량·협의회 설정)를 base64로 압축해 주소에 싣고, `applyState()`가 `#q=…`로 들어온 주소를 복원한다.
+  항목 37개 기준 전체 주소 약 500자. **이미 카카오톡으로 나간 링크가 이 형식에 기댄다** — 필드 순서·
+  인코딩을 바꾸지 말고, 항목(`src/data.ts`)을 끼워 넣지 말고 맨 뒤에 붙인다.
+- **React로 옮기며 일부러 남긴 원래 동작**(고치려면 따로 결정하고 고친다 — `src/App.tsx` 머리말):
+  입력칸·체크박스는 비제어라 사람이 친 글자가 정해진 순간(±·전체 선택·그룹 체크·가져오기)까지 남는다,
+  그룹 머리 체크박스는 줄 하나를 끌 때 따라 바뀌지 않는다, `#q=`로 절사 500원이 들어와도 단위 단추는
+  1,000원이 선택돼 보인다. 목록은 `_docs/intents/2026-09-25-react-ts-conversion/intent.md`에 있다.
 
 ## 명령
 
-- **배포 산출물(`index.html`)은 빌드·번들 없음.** `package.json`은 검사 도구(vitest·
-  `scripts/check-*.js`)를 위한 것이라 `npm ci`로 devDependencies를 받아야 검사가 돈다.
+- 개발: `npm ci` 뒤 `npm run dev`(Vite 개발 서버). 배포 산출물은 `npm run build` → `dist/`.
 - 검사(배포 워크플로가 이 순서 그대로 돈다):
   ```
   npm ci
-  node scripts/check-csp.js          # 인라인 <style>/<script> 해시가 firebase.json과 맞는지
+  npm run typecheck                  # src/ 타입(tsc, strict)
+  npm run lint                       # 검사·테스트·대조 도구 JS(eslint)
+  npm run build                      # dist/index.html(파일 하나) + dist/og.jpg
+  node scripts/check-csp.js          # dist/index.html 인라인 <style>/<script> 해시가 firebase.json과 맞는지
   node scripts/check-recommended.js  # 첫 화면(권장안)이 상한·목표선을 지키는지
   node scripts/check-signs.js        # 돈 부호(+/−)·집행률/게이지 색 판정
   node scripts/check-contrast.js     # 캡션 글자가 WCAG AA 대비를 지키는지
-  npm test                            # tests/scenarios.test.js — index.html을 jsdom에 그대로 실행
+  npm test                            # tests/scenarios.test.js — dist/index.html을 jsdom에서 화면으로만 다룬다
   node scripts/check-og.js           # 카카오톡 공유 카드(og:*·twitter:*) 태그가 <head>에 있는지
   ```
+- **화면·동작을 바꾸지 않는 수정**(리팩터·도구 교체)이면 대조 도구로 전후를 비교한다:
+  `npm run verify -- run dist` — 기준 태그의 원본과 지금 `dist/`를 같은 때에 찍어 픽셀·DOM·
+  공유 주소·엑셀·인쇄 PDF까지 대조한다(`scripts/verify/`, 도구 자체 검증은 `npm run verify:selftest`).
 - 배포: `main`에 push → **Firebase Hosting**(GitHub Actions, `.github/workflows/firebase-hosting.yml`).
 - 손으로 배포: 위 검사를 전부 통과시킨 뒤
   `firebase deploy --only hosting --project inky-calculator`.

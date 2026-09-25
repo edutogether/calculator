@@ -4,9 +4,11 @@
 필요한 물품을 골라 수량을 정하면 예산 **1,500,000원** 안에 들어오는지 바로 계산해 준다.
 
 - **라이브**: https://calc.edutogether.kr
-- **구성**: 로직은 `index.html` 한 파일에 전부 들어 있다. 빌드·번들·의존성 설치 없음.
+- **구성**: React 19 + TypeScript + Vite(2026-09-25 전환). 소스는 `src/`, 빌드하면 `dist/index.html`
+  **한 파일**에 로직·스타일이 전부 인라인으로 들어간다 — 내려받은 파일 하나만 열어도 돈다.
   배포 산출물은 그 파일과 카카오톡 공유 카드 이미지 `og.jpg` 둘이다.
-- **배포**: `main`에 push하면 Firebase Hosting에 반영된다.
+- **개발**: `npm ci` → `npm run dev`. 검사 명령은 [AGENTS.md](AGENTS.md)의 "명령" 절.
+- **배포**: `main`에 push하면 GitHub Actions가 검사·빌드한 뒤 Firebase Hosting에 반영한다.
 
 ## 기능
 

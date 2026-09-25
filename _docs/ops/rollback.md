@@ -55,6 +55,22 @@ git commit -m "revert: <freeze-태그-이름> 시점으로 되돌림 (승인 Bum
 git push origin main
 ```
 
+## React 전환(2026-09-25)을 통째로 되돌릴 때
+
+전환 직전 지점은 **`calculator-freeze-20260925-pre-react-after-artifact`**(원격에 있다)다.
+그 뒤 커밋을 한꺼번에 되돌리면 빌드 없는 `index.html` 한 파일 구조로 돌아간다 — `firebase.json`의
+`public`도 `"."`으로, CSP 해시도 그 시점 값으로 함께 돌아가므로 따로 고칠 것이 없다.
+
+```bash
+git revert --no-commit calculator-freeze-20260925-pre-react-after-artifact..HEAD
+git commit -m "revert: React 전환 되돌림 — <이유> (승인 Bumm M/D)"
+git push origin main
+```
+
+급하면 방법 A(콘솔 롤백)로 먼저 전환 전 릴리스를 서빙하고, 그다음 위 revert 로 git 을 맞춘다.
+전환 전후의 차이는 `index.html` 소스끼리가 아니라 **배포 산출물끼리** 보아야 한다 —
+`npm run verify -- run dist`(대조 도구)가 그 일을 한다.
+
 ## 하지 말 것
 
 - **`git reset --hard` + `push --force`로 main 이력을 지우지 않는다.** 이 저장소는 단일

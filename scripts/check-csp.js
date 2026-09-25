@@ -7,15 +7,26 @@
  * 갱신하지 않은 채 배포하면 호스팅된 화면이 통째로 죽는다(스크립트가 전부 차단된다).
  * 그 사고를 조용히 나지 않게 하려고, 배포 전에 이 검사를 먼저 돌린다.
  *
+ * 검사 대상은 **실제로 배포되는 dist/index.html** 이다(빌드가 인라인 블록을 만들어 넣으므로
+ * 소스가 아니라 산출물의 바이트에 해시가 걸린다). 먼저 `npm run build`.
+ *
  * 실행: node scripts/check-csp.js
  * 해시를 갱신해야 하면 이 스크립트가 알려주는 값을 firebase.json 의 CSP 에 그대로 넣는다.
  */
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const built = path.join(root, 'dist', 'index.html');
+if (!fs.existsSync(built)) {
+  console.error('dist/index.html 이 없습니다 — `npm run build` 를 먼저 돌리세요.');
+  process.exit(1);
+}
+const html = fs.readFileSync(built, 'utf8');
 const config = JSON.parse(fs.readFileSync(path.join(root, 'firebase.json'), 'utf8'));
 
 function inlineBlocks(tag) {

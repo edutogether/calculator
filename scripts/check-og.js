@@ -2,28 +2,37 @@
 /* 카카오톡 등 공유 카드(Open Graph·Twitter Card)가 실제로 붙어 있는지 검사한다.
  *
  * 소스 검사(인자 없이 실행) — CI test 잡에서 매번 돈다:
- *   1) index.html 의 <head> 에 필수 OG·Twitter 태그가 전부 있는가
+ *   1) 배포되는 dist/index.html 의 <head> 에 필수 OG·Twitter 태그가 전부 있는가
  *   2) og:image 가 가리키는 주소가 절대 주소(https://calc.edutogether.kr/og.jpg)인가
- *   3) 저장소 루트에 og.jpg 가 실제로 있고, firebase.json 의 ignore 목록에 걸리지 않는가
+ *   3) dist/og.jpg(public/og.jpg 를 빌드가 복사한 것)가 실제로 있고, firebase.json 의 ignore 목록에 걸리지 않는가
  *
  * 라이브 검사(URL 인자를 주면 추가로 실행) — CI deploy 잡이 배포 뒤에 돈다:
  *   4) 그 주소의 HTML에 태그가 실제로 응답에 실려 있는가
  *   5) og.jpg 가 실제로 200 + image/jpeg 로 응답하는가(상태 코드만 보지 않는다 —
  *      "정적 서버가 없는 파일에도 200 을 준다"는 함정이 있어 content-type 까지 본다)
  *
- * 실행: node scripts/check-og.js [검사할 주소]
+ * 실행: npm run build 뒤에 node scripts/check-og.js [검사할 주소]
  */
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const ROOT = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const DIST = path.join(ROOT, 'dist');
+if (!fs.existsSync(path.join(DIST, 'index.html'))) {
+  console.error('dist/index.html 이 없습니다 — `npm run build` 를 먼저 돌리세요.');
+  process.exit(1);
+}
+const html = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
 const problems = [];
 
 // <head> 안쪽만 본다 — <body> 안의 다른 <meta> 와 섞이지 않게.
 const headMatch = html.match(/<head>([\s\S]*?)<\/head>/);
 if (!headMatch) {
-  console.error('index.html 에서 <head> 를 찾지 못했습니다.');
+  console.error('dist/index.html 에서 <head> 를 찾지 못했습니다.');
   process.exit(1);
 }
 const head = headMatch[1];
@@ -46,7 +55,7 @@ const REQUIRED_TAGS = [
 ];
 
 const found = {};
-console.log('소스(index.html <head>) 검사 — 카드 태그 ' + REQUIRED_TAGS.length + '개');
+console.log('산출물(dist/index.html <head>) 검사 — 카드 태그 ' + REQUIRED_TAGS.length + '개');
 for (const [name, re] of REQUIRED_TAGS) {
   const m = head.match(re);
   if (!m) { problems.push(name + ' 태그가 <head> 에 없습니다.'); continue; }
@@ -65,9 +74,9 @@ if (found['og:image:width'] !== '1200' || found['og:image:height'] !== '630') {
   problems.push('og:image 크기가 1200×630 이 아닙니다(카톡 등은 이 비율을 기대합니다).');
 }
 
-const ogPath = path.join(ROOT, 'og.jpg');
+const ogPath = path.join(DIST, 'og.jpg');
 if (!fs.existsSync(ogPath)) {
-  problems.push('저장소 루트에 og.jpg 가 없습니다.');
+  problems.push('dist/og.jpg 가 없습니다 — public/og.jpg 가 빠졌거나 빌드가 복사하지 않았습니다.');
 } else {
   const size = fs.statSync(ogPath).size;
   console.log('  og.jpg 파일 크기: ' + size + ' 바이트');
@@ -103,7 +112,6 @@ async function liveCheck(url) {
   if (!/^image\/jpeg/.test(ctype)) problems.push('og.jpg 의 content-type 이 image/jpeg 가 아닙니다: ' + ctype);
 
   const buf = Buffer.from(await imgRes.arrayBuffer());
-  const crypto = require('crypto');
   const liveHash = crypto.createHash('sha256').update(buf).digest('hex');
   const localHash = crypto.createHash('sha256').update(fs.readFileSync(ogPath)).digest('hex');
   console.log('  sha256 로컬: ' + localHash);

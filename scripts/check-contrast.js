@@ -9,8 +9,11 @@
  *
  * 실행: node scripts/check-contrast.js
  */
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
@@ -73,7 +76,6 @@ if (checked === 0) { console.error('테마를 하나도 확인하지 못했습�
 if (problems.length) {
   console.error('\n대비 검사 실패\n');
   problems.forEach(p => console.error('  - ' + p));
-  process.exitCode = 1;
-  return;
+  process.exit(1);
 }
 console.log('\n대비 검사 통과 — .cap 이 두 테마 모두에서 WCAG AA 를 지킵니다.');

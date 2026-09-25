@@ -2,9 +2,17 @@
   "name": "calculator",
   "version": "1.0.0",
   "private": true,
-  "description": "제4회 인천어린이청소년영화제(InKY) 부스 물품 구매 견적 계산기. index.html 한 파일이 전부다 — 빌드·번들 없음. 이 package.json은 배포 산출물이 아니라 검사(vitest·scripts/check-*.js)를 돌리기 위한 개발 도구다.",
+  "type": "module",
+  "description": "제4회 인천어린이청소년영화제(InKY) 부스 물품 구매 견적 계산기. React 19 + TypeScript + Vite. 배포 산출물은 dist/의 index.html(로직·스타일 전부 인라인) + og.jpg 두 파일이다.",
   "scripts": {
-    "test": "vitest run"
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p .",
+    "lint": "eslint .",
+    "test": "vite build && vitest run",
+    "verify": "node scripts/verify/verify.mjs",
+    "verify:selftest": "node scripts/verify/selftest.mjs",
+    "verify:test-mutants": "node scripts/verify/test-mutants.mjs"
   },
   "repository": {
     "type": "git",
@@ -14,8 +22,24 @@
     "url": "https://github.com/edutogether/calculator/issues"
   },
   "homepage": "https://github.com/edutogether/calculator#readme",
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
     "jsdom": "^30.0.1",
+    "pdfjs-dist": "^6.3.289",
+    "pixelmatch": "^7.2.0",
+    "playwright": "^1.63.0",
+    "pngjs": "^7.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
     "vitest": "^5.0.0"
   }
 }

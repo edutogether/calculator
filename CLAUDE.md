@@ -17,11 +17,12 @@
   `https://inky-calculator.web.app` 으로도 같은 것이 열린다)
 - **클로드 아티팩트 사본은 없앴다**(2026-09-25 대표 결정 — "아티팩트 빼 버려. 웹사이트만
   남겨 놓자"). 되살리지 말 것 — `tests/scenarios.test.js` 시나리오 12가 흔적 0을 지킨다.
-- **구성**: 로직은 `index.html` **한 파일에 전부 들어 있다.** 배포 산출물은 그 파일과
-  카카오톡 공유 카드 이미지 `og.jpg`(2026-09-10 대표 지시로 추가, 정적 이미지일 뿐 로직
-  없음) 둘이다 — 배포 로그의 기대값은 `found 2 files`. 그 밖(`package.json`·`scripts/`·
-  `tests/`)은 배포 전 검사(vitest·`check-*.js`)를 돌리기 위한 개발 도구다. `main`에
-  push하면 GitHub Actions가 그 검사를 돌린 뒤 Firebase Hosting에 배포한다.
+- **구성**: **React 19 + TypeScript(strict) + Vite**(2026-09-25 전환, intent
+  `_docs/intents/2026-09-25-react-ts-conversion/`). 소스는 `src/`(데이터·돈 규칙·모델·주소 상태·
+  화면 `App.tsx`). 빌드하면 **`dist/index.html` 한 파일에 로직·스타일이 전부 인라인**으로 들어간다
+  (`build/inline-app.mts` — 번들을 원래 자리에 클래식 `<script>`로). 배포 산출물은 그 파일과
+  카카오톡 공유 카드 이미지 `og.jpg`(`public/`에서 복사) 둘이다 — 배포 로그의 기대값은 `found 2 files`.
+  `main`에 push하면 GitHub Actions가 타입·린트·검사·빌드를 돌린 뒤 Firebase Hosting에 배포한다.
 - **⚠️ 수명**: **2026-11-15까지만 필요하다**(대표 결정). 그날 예약 작업이 자동으로 Pages를 내리고
   저장소를 아카이브한다(예약 작업 `calculator-archive`). 그 전까지만 운영한다.
 - **종합감사 주기**(COMMON_STANDARDS §25): 정기 종합감사는 **분기 말(3·6·9·12월 말)**에
@@ -62,20 +63,23 @@
   (`.claude/rules/app.md`의 "`?v=` 캐시 버전 값을 걷어낸 이유" 절 참고). 캐시 문제가 보이면
   버전 값을 만들지 말고 `node scripts/check-headers.js https://calc.edutogether.kr/`로
   응답 헤더를 확인한다.
-- **줄바꿈**: 이 파일은 git이 CRLF로 체크아웃한다. 스크립트로 여러 줄 문자열을 치환할 땐
-  먼저 LF로 정규화하지 않으면 매칭이 조용히 실패한다.
+- **줄바꿈**: `.gitattributes`가 LF로 못박아 두어 체크아웃도 LF다(2026-09-25 확인 — 예전 이 줄의
+  "CRLF로 체크아웃한다"는 틀린 설명이었다). 다만 **Windows에서 파이썬으로 파일을 쓸 때는
+  `newline=''`을 줘야** LF가 유지된다 — 안 주면 파일 전체가 CRLF로 바뀐다(실제로 한 번 그랬다).
+- **화면·동작을 바꾸지 않는 수정은 대조 도구로 증명한다**: `npm run verify -- run dist`
+  (기준 태그 원본과 지금 `dist/`를 같은 때에 찍어 픽셀·DOM·공유 주소·엑셀·인쇄 PDF 대조).
 - **정체불명 스크립트**: 최초 원본에 `lc.getunicorn.org` 스크립트가 섞여 있었다(기기의 VPN류 앱이
   주입한 것으로 추정). 제거했다. **외부 스크립트는 cdnjs의 xlsx(SRI `integrity` 걸림)와
   Google Fonts뿐이어야 한다** — html2canvas·jspdf는 PDF 기능을 없애며 함께 지웠다(되살리지 말 것).
 
 ## 명령
 
-- 검사: `npm ci && node scripts/check-csp.js && node scripts/check-recommended.js
-  && node scripts/check-signs.js && node scripts/check-contrast.js && npm test
-  && node scripts/check-og.js`
+- 검사: `npm ci && npm run typecheck && npm run lint && npm run build && node scripts/check-csp.js
+  && node scripts/check-recommended.js && node scripts/check-signs.js && node scripts/check-contrast.js
+  && npm test && node scripts/check-og.js`
   (배포 워크플로가 배포 전에 전부 돌린다 — 순서는 `.github/workflows/firebase-hosting.yml` 참고).
 - 배포: `main`에 push하면 Firebase Hosting에 자동 반영(GitHub Actions).
-  손으로 하려면 위 검사를 통과시킨 뒤 `firebase deploy --only hosting --project inky-calculator`.
+  손으로 하려면 위 검사를 통과시킨 뒤(`dist/`가 만들어진 상태에서) `firebase deploy --only hosting --project inky-calculator`.
 - 확인: `node scripts/check-headers.js https://calc.edutogether.kr/`
 - 롤백: [`_docs/ops/rollback.md`](_docs/ops/rollback.md).
 
