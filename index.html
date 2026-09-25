@@ -418,10 +418,42 @@ html:not(.js) .tabbar,html:not(.js) .wrap{display:none !important}
 </script>
 <div class="wrap">
   <div id="body"></div>
-  <div class="side"></div>
+  <div class="side">
+    <div class="actsTop">
+      <button class="pb" id="pShare" title="이 견적기 주소를 보냅니다 — 받은 사람이 열면 같이 짤 수 있어요">공유하기</button>
+      <button class="pb" id="pImp">가져오기</button>
+      <button class="pb" id="pAll">전체 선택</button>
+      <input type="file" id="fImp" accept=".xlsx" hidden>
+    </div>
+    <div class="panel">
+      <div class="lab">견적 합계</div>
+      <div class="tot n" id="tot">0<small>원</small></div>
+      <div class="gauge" id="gauge"><i id="bar"></i></div>
+      <div class="sum hideM" id="sum"></div>
+      <div class="brk hideM" id="brk"></div>
+    </div>
+    <div class="panel acts hideM">
+      <button class="pb" id="xls">엑셀로 저장</button>
+      <button class="pb" id="prt" title="여섯 화면을 6쪽으로 묶어 인쇄창을 엽니다 (PDF 프린터를 고르면 PDF 로 저장돼요)">인쇄하기</button>
+    </div>
+    <div class="panel notes hideM">
+      <p>단가는 2026-09-07 다나와 · 배너 전문몰 · 통신사 공식 요금표 기준이며 배송비는 포함하지 않았어요. 공통 물품은 운영 총괄이 한 번에 사서 부스로 나누기로 해요. 여기서 고른 물건 가운데 각 부스에 공통으로 사용되는 것은 ①②③④ 화면에도 배분된 수량 만큼 그대로 표시됩니다. 부스 화면의 몫을 올리면 다른 부스 몫에서 그만큼 빠지고, 공통 전체 수량을 넘길 수는 없게 설계되어 있어요.</p>
+    </div>
+  </div>
 </div>
-<div class="mask" id="optMask"></div>
-<div class="mask" id="mask"></div>
+<div class="mask" id="optMask"><div class="dlg dlg2" role="dialog" aria-modal="true">
+  <button class="x" id="optX" aria-label="닫기">✕</button>
+  <h3 id="optT"></h3><p id="optN" class="cap"></p>
+  <div class="optbox" id="optBody"></div>
+  <div class="row2"><button class="pb" id="optCancel">취소하기</button>
+    <button class="pb on" id="optSave">저장하기</button></div>
+</div></div>
+<div class="mask" id="mask"><div class="dlg" role="alertdialog" aria-modal="true">
+  <h3 id="dlgT"></h3><div id="dlgB"></div>
+  <div id="dlgRefs" class="dlgRefs" hidden></div>
+  <div class="row2"><button class="pb" id="dlgGo">공통에서 수량 늘리기</button>
+    <button class="pb on" id="dlgX">알겠어요</button></div>
+</div></div>
 <!--inline:app-->
 <script type="module" src="/src/main.tsx"></script>
 

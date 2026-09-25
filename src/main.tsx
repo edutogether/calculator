@@ -16,6 +16,12 @@ if (!got) M.auto = false;         // 주소로 들어온 게 아니면 그 값�
 const man0 = !M.auto;             // 「직접 입력」 쪽이 선택된 채로 시작하는지
 refresh();                        // 두 번째 render()
 
+// index.html 의 옆 패널·두 대화상자 안쪽은 원본 그대로의 정적 마크업이다 — JS 가 꺼진 화면(카톡 미리보기)의
+// DOM 을 원본과 같게 두려고 남겨 둔다. JS 가 돌면 그 자리를 비우고 App 이 그린다(원본도 JS 가 그 자리를 채웠다).
+for (const el of [document.querySelector('.side'), document.getElementById('optMask'), document.getElementById('mask')]) {
+  (el as HTMLElement).replaceChildren();
+}
+
 // 문서를 읽는 도중 그 자리에서 다 그린다(flushSync) — 첫 화면이 그려지기 전에 계산기가 채워져 있게.
 const root = createRoot(document.getElementById('body') as HTMLElement);
 flushSync(() => root.render(<App man0={man0} meet0={!!(got && got.meet)} />));
