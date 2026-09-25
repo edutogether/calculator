@@ -33,7 +33,8 @@
 
 | 날짜 | 슬러그 | 등급 | 상태 | 요약 |
 |---|---|---|---|---|
-| | | | | |
+| 2026-09-09 | [print-share-fixes](2026-09-09-print-share-fixes/intent.md) | 2 | done | 인쇄 넘침·공유하기·부스 이름 등 라이브 확인 지시 7건 |
+| 2026-09-25 | [react-ts-conversion](2026-09-25-react-ts-conversion/intent.md) | 2 | accepted | React + TypeScript + Vite 전환, 화면·동작 한 픽셀도 불변 |
 
 ## 폴더 규칙
 
