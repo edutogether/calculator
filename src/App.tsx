@@ -11,7 +11,7 @@
  * - render() 자리는 flushSync(commit) 이다 — 원래처럼 그 자리에서 곧바로 화면이 바뀐다.
  * 이런 것들은 _docs/intents/2026-09-25-react-ts-conversion 의 "전환 중 발견한 것"에 적어 두었다. */
 import {
-  useLayoutEffect, useEffect, useRef, useState, useSyncExternalStore,
+  memo, useLayoutEffect, useEffect, useRef, useState, useSyncExternalStore,
   type ReactNode, type MouseEvent, type FormEvent, type ChangeEvent,
 } from 'react';
 import { createPortal, flushSync } from 'react-dom';
@@ -63,6 +63,42 @@ interface Dlg { open: boolean; t: string; b: string; id: number | null | undefin
 interface Opt { open: boolean; item: Item | null; pick: number; gen: number }   // item 은 닫힌 뒤에도 마지막 것을 들고 있다(화면에 남는다)
 type Unit = 'init' | '1000' | '500';
 
+/* 두 창(안내창·제품 고르기)의 상태는 App 밖의 작은 상자에 둔다 — 창을 열고 닫을 때 그 창만 다시 그리게.
+   App 안에 두면 창 하나를 여는 데 탭·옆 패널·섹션이 다 다시 그려져 원본보다 한 장면 늦었다(2026-09-25 측정). */
+function box<T>(initial: T) {
+  let value = initial;
+  const subs = new Set<() => void>();
+  return {
+    get: (): T => value,
+    set(next: (prev: T) => T): void { value = next(value); subs.forEach(f => f()); },
+    subscribe(f: () => void): () => void { subs.add(f); return () => { subs.delete(f); }; },
+  };
+}
+const dlgBox = box<Dlg>({ open: false, t: '', b: '', id: undefined, basis: undefined, seen: false });
+const optBox = box<Opt>({ open: false, item: null, pick: 0, gen: 0 });
+
+function dialog(t: string, b: string, id: number | null, basis?: Basis[]): void {
+  flushSync(() => dlgBox.set(() => ({ open: true, t, b, id, basis, seen: true })));
+  byId('dlgX').focus();
+}
+const closeDlg = (): void => flushSync(() => dlgBox.set(d => ({ ...d, open: false })));
+function openOpts(it: Item): void {
+  flushSync(() => optBox.set(o => ({ open: true, item: it, pick: it.sel, gen: o.gen + 1 })));
+  byId('optSave').focus();
+}
+const closeOpts = (): void => flushSync(() => optBox.set(o => ({ ...o, open: false })));
+
+/* 협의회비가 상한 비율을 넘었으면 왜 안 되는지와 무엇을 하면 되는지 알린다. 막지는 않는다. */
+function warnMeetRatio(what: string): boolean {
+  const o = meetOverRatio(); if (!o) return false;
+  dialog('협의회비가 상한을 초과하였습니다 !',
+    `협의회비는 배정 예산의 ${Math.round(MEET_MAX_RATIO * 100)}% 안에서 써야 해요 — `
+    + `${F(Math.floor(BUDGET * MEET_MAX_RATIO))}원까지입니다. 지금은 ${(o.ratio * 100).toFixed(1)}%예요.\n\n`
+    + '물품을 더 담아 남는 예산을 줄이거나, 협의회비의 인당 지급액·인원·횟수를 낮춰 주세요.\n\n'
+    + (what ? what + '은 그대로 진행됩니다 — 막지는 않아요.' : ''), null);
+  return true;
+}
+
 export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNode {
   useSyncExternalStore(subscribe, getVersion);
   const [cur, setCur] = useState(SECS[0]);
@@ -73,8 +109,6 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
   const [shareBusy, setShareBusy] = useState(false);
   const [impText, setImpText] = useState('가져오기');
   const [xlsText, setXlsText] = useState('엑셀로 저장');
-  const [dlg, setDlg] = useState<Dlg>({ open: false, t: '', b: '', id: undefined, basis: undefined, seen: false });
-  const [opt, setOpt] = useState<Opt>({ open: false, item: null, pick: 0, gen: 0 });
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [flashed, setFlashed] = useState<ReadonlySet<number>>(new Set());
   const meetWarned = useRef(false);
@@ -84,33 +118,12 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
   const setMan = (on: boolean): void => flushSync(() => setManState(on));
   const segOn = (u: '1000' | '500'): void => flushSync(() => setUnit(u));
 
-  function dialog(t: string, b: string, id: number | null, basis?: Basis[]): void {
-    flushSync(() => setDlg({ open: true, t, b, id, basis, seen: true }));
-    byId('dlgX').focus();
-  }
-  const closeDlg = (): void => flushSync(() => setDlg(d => ({ ...d, open: false })));
-  function openOpts(it: Item): void {
-    flushSync(() => setOpt(o => ({ open: true, item: it, pick: it.sel, gen: o.gen + 1 })));
-    byId('optSave').focus();
-  }
-  const closeOpts = (): void => flushSync(() => setOpt(o => ({ ...o, open: false })));
   function jumpTo(id: number): void {
     show('공통');
     flushSync(() => setFlashed(s => new Set(s).add(id)));
     const r = refs.rowEl.get(id) as HTMLDivElement;
     r.scrollIntoView({ block: 'center', behavior: 'smooth' });
     r.classList.remove('flash'); void r.offsetWidth; r.classList.add('flash');
-  }
-
-  /* 협의회비가 상한 비율을 넘었으면 왜 안 되는지와 무엇을 하면 되는지 알린다. 막지는 않는다. */
-  function warnMeetRatio(what: string): boolean {
-    const o = meetOverRatio(); if (!o) return false;
-    dialog('협의회비가 상한을 초과하였습니다 !',
-      `협의회비는 배정 예산의 ${Math.round(MEET_MAX_RATIO * 100)}% 안에서 써야 해요 — `
-      + `${F(Math.floor(BUDGET * MEET_MAX_RATIO))}원까지입니다. 지금은 ${(o.ratio * 100).toFixed(1)}%예요.\n\n`
-      + '물품을 더 담아 남는 예산을 줄이거나, 협의회비의 인당 지급액·인원·횟수를 낮춰 주세요.\n\n'
-      + (what ? what + '은 그대로 진행됩니다 — 막지는 않아요.' : ''), null);
-    return true;
   }
 
   // 첫 그림 뒤: #q= 로 협의회 설정이 들어왔으면 입력칸을 채우고, 체크·수량을 맞추고, render() 가 하던 칸을 칠한다.
@@ -136,15 +149,6 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
     document.addEventListener('keydown', onKey);
     document.addEventListener('visibilitychange', onVis);
     return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('visibilitychange', onVis); };
-  }, []);
-
-  // 두 창의 바탕(.mask) — React 가 그리는 것은 그 안쪽이라, 바탕의 on 표시와 바탕 클릭은 직접 건다.
-  useLayoutEffect(() => { byId('optMask').classList.toggle('on', opt.open); }, [opt.open]);
-  useLayoutEffect(() => { byId('mask').classList.toggle('on', dlg.open); }, [dlg.open]);
-  useEffect(() => {
-    const oMask = byId('optMask'), mask = byId('mask');
-    oMask.onclick = e => { if (e.target === oMask) closeOpts(); };
-    mask.onclick = e => { if (e.target === mask) closeDlg(); };
   }, []);
 
   // 인당 상한·지급액 칸 — 다 적고 칸을 벗어날 때(change) 한 번만 확인한다(치는 중에 잔소리하지 않게).
@@ -481,11 +485,11 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
             onChange={e => { const on = e.currentTarget.checked; D.forEach(it => { if (it.g === sec) it.on = on; }); syncChecks(); render(); }} />
           <b>{withNo(sec)}</b><span>{`${own.length}개 품목 · ${bi < 0 ? '4개 부스가 함께 사용하는 항목이에요' : '이 부스에서만 사용하는 항목이에요'}`}</span>
           <span className="gs n" data-g={sec}>{F(gs[sec] || 0) + '원'}</span></div>
-          <div className="list">{own.map(it => <Row key={it.id} it={it} flashed={flashed.has(it.id)} onAct={onRowClick} />)}</div></div>
+          <div className="list">{own.map(it => <Row key={it.id} it={it} on={it.on} sel={it.sel} qty={it.qty} flashed={flashed.has(it.id)} onAct={onRowClick} />)}</div></div>
         {inh.length ? <div className="grp">
           <div className="subh"><b>공통에서 배분되는 물품</b><span>{`${inh.length}개 · 공통 화면에서만 바꿀 수 있어요`}</span>
             <span className="gs n" data-fg={sec}>{'공통 몫 ' + F(fg[sec] || 0) + '원'}</span></div>
-          <div className="list">{inh.map(it => <FixRow key={it.id} it={it} bi={bi} onMove={onFixClick} onJump={jumpTo} />)}
+          <div className="list">{inh.map(it => <FixRow key={it.id} it={it} bi={bi} on={it.on} sel={it.sel} share={(it.sh as Record<number, number>)[bi] || 0} onMove={onFixClick} onJump={jumpTo} />)}
             <div className="hint">이 줄들의 값은 공통 예산에 이미 들어가 있어요. 위 소계에는 다시 더하지 않고, 부스별로 얼마어치가 가는지만 보여 줘요.</div>
           </div></div> : null}
       </div>
@@ -531,34 +535,26 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
         <div className="lab">공유 주소</div><input id="shareUrl" readOnly ref={shareUrlRef} />
       </div> : null}
     </>, document.querySelector('.side') as HTMLElement)}
-    {createPortal(<div className="dlg dlg2" role="dialog" aria-modal="true">
-      <button className="x" id="optX" aria-label="닫기" onClick={closeOpts}>✕</button>
-      <h3 id="optT">{opt.item ? opt.item.n + ' · 제품 고르기' : ''}</h3>
-      <p id="optN" className="cap" hidden={opt.item ? !opt.item.note : false}>{opt.item ? opt.item.note || '' : ''}</p>
-      <div className="optbox" id="optBody">{opt.item ? <OptList key={opt.gen} item={opt.item} pick={opt.pick}
-        onPick={k => flushSync(() => setOpt(o => ({ ...o, pick: k, gen: o.gen + 1 })))} /> : null}</div>
-      <div className="row2"><button className="pb" id="optCancel" onClick={closeOpts}>취소하기</button>
-        <button className="pb on" id="optSave" onClick={() => { if (opt.open && opt.item) { opt.item.sel = opt.pick; syncChecks(); render(); } closeOpts(); }}>저장하기</button></div>
-    </div>, byId('optMask'))}
-    {createPortal(<div className="dlg" role="alertdialog" aria-modal="true">
-      <h3 id="dlgT">{dlg.t}</h3><div id="dlgB">{dlg.seen ? String(dlg.b).split('\n\n').map((para, i) => <p key={i}>{para.trim()}</p>) : null}</div>
-      <div id="dlgRefs" className="dlgRefs" hidden={!(dlg.basis && dlg.basis.length)}>{dlg.basis && dlg.basis.length ? <>
-        <div className="rlab">근거</div>
-        {dlg.basis.map((r, i) => <a key={i} href={r.url} target="_blank" rel="noopener">{r.ref}{r.note ? <small>{r.note}</small> : null}</a>)}
-      </> : null}</div>
-      <div className="row2"><button className="pb" id="dlgGo" hidden={dlg.seen && dlg.id == null} onClick={() => {
-        closeDlg(); if (dlg.id == null) return;
-        jumpTo(dlg.id);
-      }}>공통에서 수량 늘리기</button>
-        <button className="pb on" id="dlgX" onClick={closeDlg}>알겠어요</button></div>
-    </div>, byId('mask'))}
+    <OptDialog />
+    <MessageDialog jumpTo={jumpTo} />
   </>;
 }
 
+/* 줄은 그 줄이 그리는 값(켜짐·선택 상품·수량·부스 몫·깜빡임)이 바뀔 때만 다시 그린다 — 수량 하나를 바꿀 때
+   37개 줄을 모두 다시 비교하면 원본보다 반응이 느려진다(2026-09-25 측정). 품목 객체(it)는 모델이 제자리에서
+   고치므로 참조로는 변화를 알 수 없어, 값을 따로 넘겨 비교한다. 처리기(onAct 등)는 비교하지 않는다 — 늘 같은
+   상태 setter 만 부르므로 지난번 것을 써도 동작이 같다. */
+type RowProps = { it: Item; on: boolean; sel: number; qty: number; flashed: boolean;
+  onAct: (it: Item, act: string, e: MouseEvent<HTMLElement>) => void };
+const Row = memo(RowView, (a: RowProps, b: RowProps) =>
+  a.it === b.it && a.on === b.on && a.sel === b.sel && a.qty === b.qty && a.flashed === b.flashed);
+type FixRowProps = { it: Item; bi: number; on: boolean; sel: number; share: number;
+  onMove: (it: Item, bi: number, dir: number) => void; onJump: (id: number) => void };
+const FixRow = memo(FixRowView, (a: FixRowProps, b: FixRowProps) =>
+  a.it === b.it && a.bi === b.bi && a.on === b.on && a.sel === b.sel && a.share === b.share);
+
 /* ── 한 품목 줄(고를 수 있는 줄) */
-function Row({ it, flashed, onAct }: {
-  it: Item; flashed: boolean; onAct: (it: Item, act: string, e: MouseEvent<HTMLElement>) => void;
-}): ReactNode {
+function RowView({ it, flashed, onAct }: RowProps): ReactNode {
   const o = it.o[it.sel], amt = it.on ? o.p * it.qty : 0;
   return (
     <div className={'row' + (it.on ? '' : ' off') + (flashed ? ' flash' : '')} data-i={it.id}
@@ -585,9 +581,7 @@ function Row({ it, flashed, onAct }: {
 }
 
 /* ── 공통에서 내려온 줄(여기서는 못 바꾸는 줄) */
-function FixRow({ it, bi, onMove, onJump }: {
-  it: Item; bi: number; onMove: (it: Item, bi: number, dir: number) => void; onJump: (id: number) => void;
-}): ReactNode {
+function FixRowView({ it, bi, onMove, onJump }: FixRowProps): ReactNode {
   const o = it.o[it.sel], key = `${it.id}:${bi}`;
   return (
     <div className={'row fix' + (it.on ? '' : ' out')} data-fx={it.id}>
@@ -623,3 +617,46 @@ function OptList({ item, pick, onPick }: { item: Item; pick: number; onPick: (k:
     </label>
   ))}</>;
 }
+
+/* ── 제품 고르기 창 — 상태는 optBox. 바탕(#optMask)의 on 표시와 바탕 클릭은 React 밖의 요소라 직접 건다.
+   받는 값이 없어 App 이 다시 그려질 때 따라 그릴 이유가 없다(memo). */
+const OptDialog = memo(function OptDialog(): ReactNode {
+  const opt = useSyncExternalStore(optBox.subscribe, optBox.get);
+  useLayoutEffect(() => { byId('optMask').classList.toggle('on', opt.open); }, [opt.open]);
+  useEffect(() => {
+    const oMask = byId('optMask');
+    oMask.onclick = e => { if (e.target === oMask) closeOpts(); };
+  }, []);
+  return createPortal(<div className="dlg dlg2" role="dialog" aria-modal="true">
+    <button className="x" id="optX" aria-label="닫기" onClick={closeOpts}>✕</button>
+    <h3 id="optT">{opt.item ? opt.item.n + ' · 제품 고르기' : ''}</h3>
+    <p id="optN" className="cap" hidden={opt.item ? !opt.item.note : false}>{opt.item ? opt.item.note || '' : ''}</p>
+    <div className="optbox" id="optBody">{opt.item ? <OptList key={opt.gen} item={opt.item} pick={opt.pick}
+      onPick={k => flushSync(() => optBox.set(o => ({ ...o, pick: k, gen: o.gen + 1 })))} /> : null}</div>
+    <div className="row2"><button className="pb" id="optCancel" onClick={closeOpts}>취소하기</button>
+      <button className="pb on" id="optSave" onClick={() => { if (opt.open && opt.item) { opt.item.sel = opt.pick; syncChecks(); render(); } closeOpts(); }}>저장하기</button></div>
+  </div>, byId('optMask'));
+});
+
+/* ── 안내창 — 상태는 dlgBox. 「공통에서 수량 늘리기」는 App 의 jumpTo 를 쓴다(App 이 다시 그려질 때 이 창까지
+   다시 그리지 않도록 memo — jumpTo 는 늘 같은 상태 setter 만 부르므로 처음 받은 것을 써도 동작이 같다). */
+const MessageDialog = memo(function MessageDialog({ jumpTo }: { jumpTo: (id: number) => void }): ReactNode {
+  const dlg = useSyncExternalStore(dlgBox.subscribe, dlgBox.get);
+  useLayoutEffect(() => { byId('mask').classList.toggle('on', dlg.open); }, [dlg.open]);
+  useEffect(() => {
+    const mask = byId('mask');
+    mask.onclick = e => { if (e.target === mask) closeDlg(); };
+  }, []);
+  return createPortal(<div className="dlg" role="alertdialog" aria-modal="true">
+    <h3 id="dlgT">{dlg.t}</h3><div id="dlgB">{dlg.seen ? String(dlg.b).split('\n\n').map((para, i) => <p key={i}>{para.trim()}</p>) : null}</div>
+    <div id="dlgRefs" className="dlgRefs" hidden={!(dlg.basis && dlg.basis.length)}>{dlg.basis && dlg.basis.length ? <>
+      <div className="rlab">근거</div>
+      {dlg.basis.map((r, i) => <a key={i} href={r.url} target="_blank" rel="noopener">{r.ref}{r.note ? <small>{r.note}</small> : null}</a>)}
+    </> : null}</div>
+    <div className="row2"><button className="pb" id="dlgGo" hidden={dlg.seen && dlg.id == null} onClick={() => {
+      closeDlg(); if (dlg.id == null) return;
+      jumpTo(dlg.id);
+    }}>공통에서 수량 늘리기</button>
+      <button className="pb on" id="dlgX" onClick={closeDlg}>알겠어요</button></div>
+  </div>, byId('mask'));
+}, () => true);
