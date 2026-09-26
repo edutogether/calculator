@@ -12,7 +12,8 @@
     "test": "vite build && vitest run",
     "verify": "node scripts/verify/verify.mjs",
     "verify:selftest": "node scripts/verify/selftest.mjs",
-    "verify:test-mutants": "node scripts/verify/test-mutants.mjs"
+    "verify:test-mutants": "node scripts/verify/test-mutants.mjs",
+    "verify:nojs-flash": "node scripts/verify/nojs-flash.mjs"
   },
   "repository": {
     "type": "git",

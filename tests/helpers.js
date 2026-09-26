@@ -120,4 +120,4 @@ async function importRows(win, rows) {
   for (let i = 0; i < 50 && text(win, '#pImp') === '가져오기'; i++) await tick();
 }
 
-export { loadApp, tick, $, type, commit, click, text, won, sumRow, meetOnly, sharedUrl, encodeState, importRows };
+export { HTML, loadApp, tick, $, type, commit, click, text, won, sumRow, meetOnly, sharedUrl, encodeState, importRows };

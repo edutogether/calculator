@@ -23,6 +23,7 @@
 body{margin:0;padding:0}
 img{max-width:100%}
 [hidden]{display:none !important}</style>
+<script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
 <title>InKY Calculator</title>
@@ -345,6 +346,10 @@ input[type=radio]{accent-color:var(--acc);width:15px;height:15px;cursor:pointer}
 /* 스크립트가 막힌 뷰어에서는 견적 화면을 아예 안 그린다(빈 칸이 지저분하게 남지 않게).
    바로 아래 인라인 스크립트가 html 에 js 표시를 달아 주므로, 정상 브라우저에서는 깜빡임이 없다. */
 html:not(.js) .tabbar,html:not(.js) .wrap{display:none !important}
+/* 거꾸로 JS 가 도는 화면에서는 카드를 처음부터 안 그린다. js 표시는 <head> 의 한 줄이 문서 맨 앞에서 단다 —
+   카드 바로 뒤 스크립트만 믿으면, 카드를 읽고 그 스크립트에 닿기 전에 화면이 한 번 그려질 때 카드가 보인다
+   (2026-09-26 느린 폰에서 React 판이 약 0.1초 보였다. scripts/verify/nojs-flash.mjs 가 막는다). */
+html.js .nojs{display:none !important}
 .nojs .btns{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:16px 0 12px}
 .nojs .btns a{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
   text-align:center;text-decoration:none;border-radius:12px;padding:12px 5px 11px;

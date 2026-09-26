@@ -10,7 +10,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-  loadApp, tick, $, type, commit, click, text, won, sumRow, meetOnly, sharedUrl, encodeState, importRows,
+  HTML, loadApp, tick, $, type, commit, click, text, won, sumRow, meetOnly, sharedUrl, encodeState, importRows,
 } from './helpers.js';
 
 const F = n => n.toLocaleString('ko-KR');
@@ -310,5 +310,17 @@ describe('시나리오 12 — 아티팩트 흔적이 없다(2026-09-25 대표 �
     expect(html.length).toBeGreaterThan(10000); // 문서를 제대로 읽었는지부터
     expect(html).not.toMatch(/claude\.ai|artifact|아티팩트|claude\.use/i);
     for (const id of ['dlgL', 'dlgCopy', 'dlgOpen']) expect(win.document.getElementById(id)).toBeNull();
+  });
+});
+
+describe('시나리오 13 — JS 가 도는 화면에서 카톡 카드(#nojs)가 한 장면도 안 보인다', () => {
+  /* 2026-09-26 대표님이 녹화로 찾음: 느린 폰에서 React 판이 첫 화면 직후 약 0.1초 카드를 보였다.
+   * 카드 바로 뒤 스크립트만 믿으면 카드를 읽고 그 스크립트에 닿기 전 화면이 그려질 때 카드가 보인다.
+   * 그래서 js 표시를 <head> 에서 달고 CSS 가 카드를 처음부터 숨긴다. 실제 장면 검사는
+   * scripts/verify/nojs-flash.mjs(느린 폰·매 장면 기록), 여기서는 그 장치가 빠지지 않았는지만 본다. */
+  it('js 표시는 카드보다 앞(<head>)에서 달리고, html.js 면 카드를 숨기는 규칙이 있다', () => {
+    const head = HTML.slice(0, HTML.indexOf('</head>'));
+    expect(head).toMatch(/<script>document\.documentElement\.classList\.add\('js'\)<\/script>/);
+    expect(HTML).toMatch(/html\.js \.nojs\{display:none !important\}/);
   });
 });
