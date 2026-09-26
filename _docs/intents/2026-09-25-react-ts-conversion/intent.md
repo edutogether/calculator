@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 등급: 2
 작성자: InKY Calculator 세션 (Claude)
 작성 시각: 2026-09-25

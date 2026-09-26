@@ -5,6 +5,13 @@ InKY Calculator의 변경 이력. **git 커밋 기록에서 확인되는 사실�
 
 ## 2026-09-26
 
+- **React 판을 라이브에 배포했다**(팀장 승인 9/26, `main` 9bfbb31 → ed1e884 fast-forward, Firebase 버전
+  `e44eed5a90fbd68e`). 올라간 파일은 `index.html`·`og.jpg` 둘(API 기준, 그 밖은 Firebase 자동 `/__/firebase/init.*`).
+  라이브 확인: `index.html`·`og.jpg` 바이트가 `dist/`·`public/`과 sha256 일치, 보안 헤더 검사 통과,
+  `README.md`·`.git/config`·`package.json`·`src/main.tsx`·`firebase.json` 404, 헤드리스 크롬에서 CSP 위반·
+  페이지 오류 0, 합계 표시·수량 변경·엑셀 저장·인쇄 호출 정상, JS 끔은 카드 보임·계산기 숨김,
+  `nojs-flash` 폰·6배 10판 모두 카드 0장면. 되돌리기: `_docs/ops/rollback.md`(태그
+  `calculator-freeze-20260925-pre-react-after-artifact`).
 - **JS 가 도는 화면에서 카톡 안내 카드(#nojs)가 첫 화면에 비치던 것을 막았다**(대표님이 녹화로 찾음 —
   CPU 6배 느린 폰에서 React 판만 첫 화면 직후 약 0.1초 카드와 Safari 단추가 보였다). 카드를 숨기는 것은
   카드 바로 뒤 인라인 스크립트뿐이라, 파서가 카드를 읽고 그 스크립트에 닿기 전에 화면이 그려지면 카드가
