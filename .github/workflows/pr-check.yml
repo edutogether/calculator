@@ -1,0 +1,58 @@
+# PR(대상 main)마다 자동으로 도는 검사. 배포는 하지 않는다 — 배포·비밀 키는
+# firebase-hosting.yml 의 deploy 잡에만 있고 여기엔 없다.
+#
+# firebase-hosting.yml 의 test 잡(push 때 도는 배포 전 검사)과 똑같은 단계를 그대로 돌린다.
+# 두 워크플로가 같은 검사를 두 곳에 적어 두는 게 당연히 보이지만, GitHub Actions 워크플로는
+# 서로 include 할 수 없어(재사용 워크플로로 뺄 수는 있으나 이 저장소 하나뿐이라 과하다) 이 정도
+# 중복은 감수한다 — 검사 단계가 바뀌면 두 파일을 같이 고칠 것.
+#
+# 2026-09-27 대표 지시: Codex 클라우드가 올리는 PR도 사람이 요청하지 않아도 기본으로
+# 검사되게 한다. GITHUB_TOKEN 은 체크아웃에만 쓰고 아무것도 쓰지 않는다.
+name: PR 검사
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 타입 검사 (tsc)
+        run: npm run typecheck
+
+      - name: 린트 (eslint)
+        run: npm run lint
+
+      - name: 빌드 (dist/)
+        run: npm run build
+
+      - name: CSP 해시가 배포될 dist/index.html 과 맞는지 검사
+        run: node scripts/check-csp.js
+
+      - name: 권장안이 협의회비 상한을 지키는지 검사
+        run: node scripts/check-recommended.js
+
+      - name: 돈 부호 검사
+        run: node scripts/check-signs.js
+
+      - name: 캡션 대비 검사
+        run: node scripts/check-contrast.js
+
+      - name: 시나리오 테스트 (vitest)
+        run: npm test
+
+      - name: 공유 카드 태그 검사
+        run: node scripts/check-og.js
