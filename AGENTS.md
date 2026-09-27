@@ -132,3 +132,26 @@ CSP가 차단한다. 스타일은 `<style>` 블록에 규칙으로 넣고, 핸�
 - **롤백이 필요하면** [`_docs/ops/rollback.md`](_docs/ops/rollback.md)를 따른다 —
   `git reset --hard`나 `push --force`를 쓰지 않는다.
 - 커밋 메시지 형식: `type: 한글 설명 (승인 Bumm M/D)` — type은 feat/fix/docs/chore/refactor/test.
+
+## 조직 공통 규칙 — 다른 도구·클라우드에서도 (D:\Projects 헌법 요약)
+
+이 저장소만 받아서 일하는 도구(Codex 클라우드, Claude Code 클라우드, 다른 기기)는 `D:\Projects`의 공통
+문서를 못 본다. 그래서 꼭 지켜야 할 것을 여기 옮겨 둔다. 원본은 `817beatles/projects`의 `_shared/constitution.md`.
+
+- **사람**: 최종 결정권자는 **Bumm님**. 모든 답·문서·커밋은 **한국어**, 호칭은 늘 "Bumm님".
+- **앱 이름**은 정식 이름 하나로만: CLASSCADE · Poster Studio · Be a Googler · Voice Cinema · Portal ·
+  Codyssey · InKY Calculator · AI Ways Incheon (줄임말·별명·번역어 금지).
+- **보고 경로**: 앱 담당은 팀장(Project Engineering)과만 주고받는다. Bumm님이 직접 말을 걸면 그 건만 직접 답한다.
+- 🔴 **`main` 푸시 = 라이브 배포.** Codex·클라우드·다른 기기에서 한 작업은 `main`에 직접 푸시하지 않는다 —
+  작업 가지 → PR로 내고, 합치는 것은 팀장 확인 뒤. 되돌리기는 CI로만(프리즈 태그 기준), 라이브에 직접 손대지 않는다.
+- 🔴 **멈추고 Bumm님께 묻는 것**: 콘솔 전용 작업(Firebase/GCP), 돈이 드는 결정, 법률·정책 판단, 되돌리기 어렵거나
+  파괴적인 행동, 영구 식별자(프로젝트·사이트 ID, 버킷 이름) 생성, 새 제품 방향.
+- **한 번에 완성**: "일단", "차선책", "우회", "나중에" 금지. 제대로 못 하면 멈추고 보고. `TODO`/`FIXME`/`임시` 금지.
+  검사를 느슨하게 하거나 빼서 통과시키지 않는다. 검사는 실제로 돌리고 종료 코드로 확인한다.
+- **숨길 것**: 어드민 화면·기능은 저장소·배포·커밋 어디에도 드러내지 않는다. 비밀 키·토큰·인증 코드는 쓰지 않는다.
+- **인계(도구·기기를 바꿔 가며 이어서 할 때)**: 단계를 끝낼 때마다 작업 가지에 올리고, PR 설명에
+  "한 일 / 다음에 할 일 / 주의할 것"을 적는다. 같은 가지를 두 도구가 동시에 고치지 않는다 — 한쪽이 올린 뒤 이어받는다.
+- **로컬(집 PC) 전용 작업** — 클라우드에서는 하지 않는다: 콘솔 작업(Firebase Hosting·DNS), 운영 데이터
+  읽기·쓰기, 배포 승인, 집 PC 모니터를 쓰는 측정, **Firebase 프리뷰 채널 생성·삭제**와 **CPU 스로틀
+  성능 측정**(`scripts/verify/perf.mjs`, `scripts/verify/nojs-flash.mjs` — 헤드리스 Chrome을 이 PC에서
+  직접 띄운다). 클라우드는 코드 수정·타입·린트·`npm run verify`(파일 대조)·PR까지만.

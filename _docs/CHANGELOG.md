@@ -3,6 +3,12 @@
 InKY Calculator의 변경 이력. **git 커밋 기록에서 확인되는 사실만** 적는다 — 확인 안 되는 것은
 적지 않는다(DOC-STANDARD 원칙). 날짜는 커밋 메시지의 승인 날짜 기준.
 
+## 2026-09-27
+
+- **AGENTS.md에 조직 공통 규칙 절을 추가했다**(팀장 지시 — Codex 클라우드·Claude 클라우드에서도 이
+  저장소만 받아 일할 수 있게 준비). `D:\Projects\_shared\constitution.md` 요약을 그대로 옮기고,
+  "로컬 전용 작업" 줄에 이 앱의 것(Firebase 프리뷰 채널, CPU 스로틀 성능 측정)을 더했다.
+
 ## 2026-09-26
 
 - **React 판을 라이브에 배포했다**(팀장 승인 9/26, `main` 9bfbb31 → ed1e884 fast-forward, Firebase 버전
