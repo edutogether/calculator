@@ -3,6 +3,17 @@
 InKY Calculator의 변경 이력. **git 커밋 기록에서 확인되는 사실만** 적는다 — 확인 안 되는 것은
 적지 않는다(DOC-STANDARD 원칙). 날짜는 커밋 메시지의 승인 날짜 기준.
 
+## 2026-09-29
+
+- **클라우드 세션 준비 — SessionStart 훅**(가지 `claude/cloud-session-setup`에만, 미배포).
+- `scripts/cloud-session-start.sh`(원본은 `817beatles/projects`의 `_shared/cloud/`)와 `.claude/settings.json`의
+  `SessionStart` 훅. **Anthropic 클라우드 세션(`CLAUDE_CODE_REMOTE=true`)에서만** 돈다 — ① `node_modules`가 없는
+  패키지만 `npm ci` ② Playwright 설정이 있으면 이 저장소가 고정한 Chromium ③ `AGENTS.md`의 «조직 공통 규칙» 절을
+  세션 컨텍스트에 넣는다(클라우드에는 상위 `D:\Projects\CLAUDE.md`가 없다). 집 PC 로컬 세션에서는 첫 줄에서 끝나
+  아무 일도 하지 않는다. 가지 `claude/cloud-session-setup`에만 있고 `main` 반영은 팀장 확인 뒤.
+  설정·여는 법 원문은 `_shared/CLAUDE-CLOUD.md`.
+- 클라우드 실측(2026-09-29, Anthropic 클라우드 Ubuntu 24.04 · Node 22): typecheck·lint·test·build 전부 통과 — 단 Node 22에서다(CI는 24, 클라우드 기본 이미지에 24가 없다. CI 결과가 기준).
+
 ## 2026-09-27
 
 - **AGENTS.md에 조직 공통 규칙 절을 추가했다**(팀장 지시 — Codex 클라우드·Claude 클라우드에서도 이
