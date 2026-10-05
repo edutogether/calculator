@@ -51,8 +51,13 @@ export function fixPer(v: number): number {
 }
 
 /* 밖에서 들어온 값(#q= 주소·엑셀 셀)을 "0 이상 정수"로 정리한다 — 입력칸에 사람이 직접 칠 때와
-   같은 규칙. parseInt 는 값을 문자열로 바꿔 읽으므로 문자열이 아닌 것도 그대로 넘긴다. */
-export const int0 = (x: unknown): number => Math.max(0, parseInt(x as string, 10) || 0);
+   같은 규칙. parseInt 는 값을 문자열로 바꿔 읽으므로 문자열이 아닌 것도 그대로 넘긴다.
+   자릿수가 아주 긴 숫자는 parseInt 가 Infinity 를 돌려줘 합계가 ∞·NaN 이 되므로, 안전한 정수
+   범위(Number.MAX_SAFE_INTEGER)에서 멈춘다. 평범한 값은 그대로다. */
+export const int0 = (x: unknown): number => {
+  const n = parseInt(x as string, 10);
+  return Number.isNaN(n) ? 0 : Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, n));
+};
 
 /* 인당 상한의 근거. 문구와 링크를 한 곳에 모아 둔다 — 근거가 바뀌면 여기만 고친다.
    링크는 파일이 아니라 **그 문서가 올라와 있는 글 주소**를 쓴다(대표 지시).

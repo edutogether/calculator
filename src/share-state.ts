@@ -6,6 +6,10 @@
 import { M, D } from './model.ts';
 import { fixPer, int0 } from './money.ts';
 
+/* 정상 주소의 #q= 는 항목 37개 기준 약 500자다. 이보다 훨씬 긴 것은 사람이 만든 링크가 아니라서, 첫 화면을
+   그리기 전에 동기로 풀고 파싱하느라 화면이 멈추지 않도록 읽지 않는다(못 읽는 주소와 같게 false). */
+export const STATE_MAX_CHARS = 4096;
+
 export function stateStr(): string {
   const a = D.map(it => [it.sel, it.qty, it.on ? 1 : 0]);
   const j = JSON.stringify({ v: 1, a, m: [M.n, M.c, M.cap, M.unit, M.auto ? 1 : 0, M.per] });
@@ -23,6 +27,7 @@ export function stateStr(): string {
    (인원·횟수·인당 상한)을 그 값으로 다시 채운다. 못 읽으면 false. 읽다가 중간에 깨지면
    거기까지 바뀐 것은 그대로 두고 false 다(원래 동작 그대로). */
 export function applyState(str: string): false | { meet: boolean } {
+  if (str.length > STATE_MAX_CHARS) return false;
   try {
     const b = atob(str.replace(/-/g, '+').replace(/_/g, '/'));
     const u = Uint8Array.from(b, c => c.charCodeAt(0));

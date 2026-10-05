@@ -28,6 +28,7 @@ import type { Item } from './types.ts';
 const byId = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 const LIVE_URL = 'https://calc.edutogether.kr/';   // 이 견적기가 올라가 있는 웹 주소. 공유하기가 #q= 를 붙여 보낸다.
 const NOTES = "단가는 2026-09-07 다나와 · 배너 전문몰 · 통신사 공식 요금표 기준이며 배송비는 포함하지 않았어요. 공통 물품은 운영 총괄이 한 번에 사서 부스로 나누기로 해요. 여기서 고른 물건 가운데 각 부스에 공통으로 사용되는 것은 ①②③④ 화면에도 배분된 수량 만큼 그대로 표시됩니다. 부스 화면의 몫을 올리면 다른 부스 몫에서 그만큼 빠지고, 공통 전체 수량을 넘길 수는 없게 설계되어 있어요.";
+const IMPORT_MAX_BYTES = 10 * 1024 * 1024;   // 가져오기 파일 크기 상한 — 「엑셀로 저장」이 만드는 파일은 수십 KB 다.
 const HEAD = ['구분', '품목', '선택 상품', '규격 · 사양', '수량', '단가(원)', '금액(원)', '구매 링크'];
 const FAVI_ON = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Ctext%20y='.9em'%20font-size='58'%3E%F0%9F%A7%BE%3C/text%3E%3C/svg%3E";
 const FAVI_OFF = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Cfilter%20id='g'%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3C/filter%3E%3Ctext%20y='.9em'%20font-size='58'%20filter='url(%23g)'%3E%F0%9F%A7%BE%3C/text%3E%3C/svg%3E";
@@ -314,6 +315,14 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
     const f = (input.files as FileList)[0]; if (!f) return;
     const setB = (t: string): void => flushSync(() => setImpText(t));
     const fail = (t: string, body: string): void => { dialog(t, body, null); setB('가져오지 못했어요'); };
+    if (f.size > IMPORT_MAX_BYTES) {
+      fail('파일이 너무 커요',
+        `「${f.name}」은 ${Math.ceil(f.size / 1048576)}MB 로, 가져올 수 있는 크기(10MB)를 넘어요.\n\n`
+        + '이 계산기의 「엑셀로 저장」으로 만든 파일은 훨씬 작아요. 그 파일을 올려 주세요.');
+      input.value = '';
+      setTimeout(() => setB('가져오기'), 2600);
+      return;
+    }
     try {
       let rows: unknown[][];
       try {
@@ -337,13 +346,13 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
         if (nm === '협의회 참석 지원') {
           const mm = String(r[3] || '').match(/(\d+)명 × (\d+)회/);
           // 엑셀 셀은 사람이 손으로 고칠 수 있는 값이다 — #q= 와 같은 규칙으로 음수·소수·상한 초과를 걸러낸다.
-          meetIn = { per: fixPer(int0(r[5])), n: mm ? +mm[1] : null, c: mm ? +mm[2] : null };
+          meetIn = { per: fixPer(int0(r[5])), n: mm ? int0(mm[1]) : null, c: mm ? int0(mm[2]) : null };
           return;
         }
         const it = D.find(x => x.n === nm); if (!it) return;
         const k = it.o.findIndex(o => o.t === pt);
         const qn = Number(r[4]);
-        picks.push({ it, sel: k >= 0 ? k : null, qty: Number.isFinite(qn) ? Math.max(0, Math.floor(qn)) : null });
+        picks.push({ it, sel: k >= 0 ? k : null, qty: Number.isFinite(qn) ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(qn))) : null });
       });
       if (!picks.length) {
         fail('견적으로 알아볼 수 있는 줄이 없어요',
