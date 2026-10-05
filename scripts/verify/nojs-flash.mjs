@@ -22,7 +22,7 @@ const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i
 const RUNS = Number(opt('--runs', '10'));
 const RATE = Number(opt('--rate', '6'));
 const PHONE = { viewport: { width: 375, height: 812 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true };
-const EXTERNAL = /^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com)\//;
+const EXTERNAL = /^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.sheetjs\.com)\//;
 
 const baseDir = path.join(ROOT, '.verify', 'nojs-base');
 fs.rmSync(baseDir, { recursive: true, force: true }); fs.mkdirSync(baseDir, { recursive: true });

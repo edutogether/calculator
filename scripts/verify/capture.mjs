@@ -27,10 +27,10 @@ import { SCENARIOS, VP } from './scenarios.mjs';
 
 const FIXED_NOW = new Date('2026-10-01T09:00:00+09:00');
 
-/* 밖에서 오는 것(구글 폰트 CSS·글꼴 파일, cdnjs xlsx)은 한 번만 받아 이 프로세스 안에서 재사용한다.
+/* 밖에서 오는 것(구글 폰트 CSS·글꼴 파일, SheetJS xlsx)은 한 번만 받아 이 프로세스 안에서 재사용한다.
  * 빠르기도 하지만, 더 중요한 것은 기준선과 대조본이 **같은 바이트**를 받는다는 점이다 —
  * 도중에 구글이 글꼴 파일을 바꿔도 양쪽이 똑같이 영향을 받는다. */
-const EXTERNAL = /^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com)\//;
+const EXTERNAL = /^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.sheetjs\.com)\//;
 const cache = new Map();
 async function fromCache(route) {
   const url = route.request().url();

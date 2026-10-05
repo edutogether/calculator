@@ -17,7 +17,7 @@ Codex 등 `.claude/`를 자동으로 읽지 않는 도구는 **[`.claude/rules/a
   `inky-calculator`)이 서빙하고, `https://inky-calculator.web.app` 으로도 같은 것이 열린다.
 - 옛 주소 `edutogether.github.io/inky-calculator`(GitHub Pages)는 **내리는 중이다.**
   코드·문서에는 더 이상 남아 있지 않다. 되살릴 일이 없다 — 새로 쓰지 말 것.
-- 외부 리소스는 **cdnjs의 xlsx(버전 고정, SRI `integrity`·`crossorigin` 걸림) + Google Fonts
+- 외부 리소스는 **`cdn.sheetjs.com`의 xlsx(0.19.3 이상 버전 고정, SRI `integrity`·`crossorigin` 걸림) + Google Fonts
   뿐이어야 한다.** html2canvas·jspdf는 PDF 기능을 없애며 함께 지웠다(되살리지 말 것). 구글
   폰트 CSS는 브라우저마다 다른 바이트를 돌려주는 리소스라 SRI를 걸 수 없다 — 걸려고 하지 말 것.
   (과거 원본에 `lc.getunicorn.org` 스크립트가 섞여 있었다 — 기기의 VPN류 앱이 주입한 것으로 추정, 제거했다.
@@ -112,6 +112,7 @@ CSP가 차단한다. 스타일은 `<style>` 블록에 규칙으로 넣고, 핸�
   npm run lint                       # 검사·테스트·대조 도구 JS(eslint)
   npm run build                      # dist/index.html(파일 하나) + dist/og.jpg
   node scripts/check-csp.js          # dist/index.html 인라인 <style>/<script> 해시가 firebase.json과 맞는지
+  node scripts/check-xlsx.js         # 엑셀 라이브러리가 0.19.3 이상·SRI·CSP 호스트 하나로 고정돼 있는지(PR은 --live로 실제 파일까지)
   node scripts/check-recommended.js  # 첫 화면(권장안)이 상한·목표선을 지키는지
   node scripts/check-signs.js        # 돈 부호(+/−)·집행률/게이지 색 판정
   node scripts/check-contrast.js     # 캡션 글자가 WCAG AA 대비를 지키는지

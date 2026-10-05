@@ -69,13 +69,13 @@
 - **화면·동작을 바꾸지 않는 수정은 대조 도구로 증명한다**: `npm run verify -- run dist`
   (기준 태그 원본과 지금 `dist/`를 같은 때에 찍어 픽셀·DOM·공유 주소·엑셀·인쇄 PDF 대조).
 - **정체불명 스크립트**: 최초 원본에 `lc.getunicorn.org` 스크립트가 섞여 있었다(기기의 VPN류 앱이
-  주입한 것으로 추정). 제거했다. **외부 스크립트는 cdnjs의 xlsx(SRI `integrity` 걸림)와
+  주입한 것으로 추정). 제거했다. **외부 스크립트는 `cdn.sheetjs.com`의 xlsx(0.19.3 이상, SRI `integrity` 걸림)와
   Google Fonts뿐이어야 한다** — html2canvas·jspdf는 PDF 기능을 없애며 함께 지웠다(되살리지 말 것).
 
 ## 명령
 
 - 검사: `npm ci && npm run typecheck && npm run lint && npm run build && node scripts/check-csp.js
-  && node scripts/check-recommended.js && node scripts/check-signs.js && node scripts/check-contrast.js
+  && node scripts/check-xlsx.js && node scripts/check-recommended.js && node scripts/check-signs.js && node scripts/check-contrast.js
   && npm test && node scripts/check-og.js`
   (배포 워크플로가 배포 전에 전부 돌린다 — 순서는 `.github/workflows/firebase-hosting.yml` 참고).
 - 배포: `main`에 push하면 Firebase Hosting에 자동 반영(GitHub Actions).

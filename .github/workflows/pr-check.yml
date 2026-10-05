@@ -42,6 +42,10 @@ jobs:
       - name: CSP 해시가 배포될 dist/index.html 과 맞는지 검사
         run: node scripts/check-csp.js
 
+      # 정적 검사에 더해 실제 파일을 받아 SRI 해시·버전까지 대조한다(PR 에서만 — 배포가 외부 CDN 에 기대지 않게).
+      - name: 엑셀 라이브러리 고정 검사 (실제 파일 대조)
+        run: node scripts/check-xlsx.js --live
+
       - name: 권장안이 협의회비 상한을 지키는지 검사
         run: node scripts/check-recommended.js
 
