@@ -21,11 +21,34 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const root = path.join(__dirname, '..');
-const built = path.join(root, 'dist', 'index.html');
+const deployDir = path.join(root, 'dist');
+const built = path.join(deployDir, 'index.html');
 if (!fs.existsSync(built)) {
   console.error('dist/index.html 이 없습니다 — `npm run build` 를 먼저 돌리세요.');
   process.exit(1);
 }
+
+const approvedArtifacts = new Set(['index.html', 'og.jpg']);
+function filesIn(dir, prefix = '') {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+    const relative = path.posix.join(prefix, entry.name);
+    if (entry.isFile()) return [relative];
+    if (entry.isDirectory()) return filesIn(path.join(dir, entry.name), relative);
+    return [relative];
+  });
+}
+
+const deployedArtifacts = filesIn(deployDir);
+const unexpectedArtifacts = deployedArtifacts.filter(name => !approvedArtifacts.has(name));
+const missingArtifacts = [...approvedArtifacts].filter(name => !deployedArtifacts.includes(name));
+
+if (unexpectedArtifacts.length || missingArtifacts.length) {
+  console.error('배포 산출물 검사 실패');
+  unexpectedArtifacts.forEach(name => console.error(`  - 승인되지 않은 파일: dist/${name}`));
+  missingArtifacts.forEach(name => console.error(`  - 승인된 파일이 없습니다: dist/${name}`));
+  process.exit(1);
+}
+
 const html = fs.readFileSync(built, 'utf8');
 const config = JSON.parse(fs.readFileSync(path.join(root, 'firebase.json'), 'utf8'));
 
