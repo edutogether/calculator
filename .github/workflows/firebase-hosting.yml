@@ -27,9 +27,9 @@ jobs:
     steps:
       # v4 는 Node.js 20 위에서 도는 액션이라 러너가 24로 강제 실행하며 경고를 띄웠다.
       # v7 부터 액션 자체가 node24 를 쓴다(runs.using: node24) — 그래서 경고가 사라진다.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7
         with:
           # 검사 스크립트를 돌릴 Node. 20 은 2026-04 로 지원이 끝나 러너와 같은 24 로 맞춘다.
           node-version: '24'
@@ -81,7 +81,7 @@ jobs:
     outputs:
       code: ${{ steps.check.outputs.code }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
           fetch-depth: 0 # 아래 diff 가 push 범위 전체를 봐야 하므로 전체 이력을 받는다
 
@@ -134,9 +134,9 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7
         with:
           node-version: '24'
 
@@ -153,11 +153,12 @@ jobs:
         run: node scripts/check-csp.js
 
       - name: Firebase Hosting 에 배포
-        uses: FirebaseExtended/action-hosting-deploy@v0
+        uses: FirebaseExtended/action-hosting-deploy@500ac625ca2dd40cbd15f7659af953801858032a  # v0
         with:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_INKY_CALCULATOR }}
           projectId: inky-calculator
           channelId: live
+          firebaseToolsVersion: 15.32.1
 
       # 이번 이전의 목적이 응답 헤더라, 헤더가 빠진 배포는 성공이 아니다.
       # 두 주소를 다 본다: 사람들이 쓰는 것은 공식 주소이고, Firebase 기본 주소와 결과가

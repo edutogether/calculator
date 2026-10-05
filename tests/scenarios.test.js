@@ -324,3 +324,57 @@ describe('시나리오 13 — JS 가 도는 화면에서 카톡 카드(#nojs)가
     expect(HTML).toMatch(/html\.js \.nojs\{display:none !important\}/);
   });
 });
+
+describe('시나리오 14 — 자릿수가 아주 긴 숫자가 합계를 ∞·NaN 으로 만들지 않는다 (보안 지적 대응)', () => {
+  const HUGE = '1' + '0'.repeat(400);   // parseInt 가 Infinity 를 돌려주는 길이
+
+  it('#q= 의 수량·인원·횟수가 천문학적이어도 합계가 숫자로 찍힌다', async () => {
+    const q = encodeState({ v: 1, a: [[0, HUGE, 1], [1, HUGE, 1]], m: [HUGE, HUGE, 40000, 1000, 0, 40000] });
+    const win = await loadApp('q=' + q);
+    expect(text(win, '#tot')).toMatch(/^[0-9,]+원$/);
+    expect($(win, '#sum').innerHTML).not.toMatch(/NaN|∞|Infinity/);
+  });
+
+  it('가져오기(엑셀)의 수량·인원·횟수가 천문학적이어도 합계가 숫자로 찍힌다', async () => {
+    const win = await loadApp();
+    await importRows(win, [
+      ['공통', '포켓 Wi-Fi', '코리아와이파이 5G 10GB (U50)', '5G · 10GB/일', 1e308, 20900, 0],
+      ['협의회비', '협의회 참석 지원', '', `${HUGE}명 × ${HUGE}회`, '', 20000, ''],
+    ]);
+    expect(text(win, '#pImp')).toBe('1개 반영됨');
+    expect(text(win, '#tot')).toMatch(/^[0-9,]+원$/);
+    expect($(win, '#sum').innerHTML).not.toMatch(/NaN|∞|Infinity/);
+  });
+});
+
+describe('시나리오 15 — 정상 길이를 한참 넘는 #q= 는 읽지 않는다 (보안 지적 대응)', () => {
+  it('짧은 주소는 반영되고, 같은 값이 든 아주 긴 주소는 무시된다', async () => {
+    const plain = await loadApp();
+    const base = text(plain, '#tot');
+
+    const short = await loadApp('q=' + encodeState({ v: 1, a: [[0, 7, 1]] }));
+    expect(text(short, '#tot')).not.toBe(base);                       // 반영됐다
+
+    const filler = Array(2000).fill([0, 0, 0]);
+    const long = encodeState({ v: 1, a: [[0, 7, 1], ...filler] });
+    expect(long.length).toBeGreaterThan(4096);
+    const win = await loadApp('q=' + long);
+    expect(text(win, '#tot')).toBe(base);                             // 읽지 않았다 — 기본 화면 그대로
+  });
+});
+
+describe('시나리오 16 — 너무 큰 파일은 가져오기가 읽지 않는다 (보안 지적 대응)', () => {
+  it('10MB 를 넘는 파일은 엑셀 해석을 시작하지 않고 안내창을 띄운다', async () => {
+    const win = await loadApp();
+    let read = 0;
+    win.XLSX = { read: () => { read++; return { SheetNames: ['S'], Sheets: { S: {} } }; }, utils: { sheet_to_json: () => [] } };
+    const input = $(win, '#fImp');
+    const file = { name: 'big.xlsx', size: 11 * 1024 * 1024, arrayBuffer: async () => new ArrayBuffer(0) };
+    Object.defineProperty(input, 'files', { configurable: true, value: [file] });
+    input.dispatchEvent(new win.Event('change', { bubbles: true }));
+    await tick();
+    expect(read).toBe(0);
+    expect(text(win, '#dlgT')).toBe('파일이 너무 커요');
+    expect($(win, '#mask').classList.contains('on')).toBe(true);
+  });
+});

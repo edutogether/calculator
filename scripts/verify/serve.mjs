@@ -30,6 +30,7 @@ function send(res, file) {
 }
 
 export function startServer(root) {
+  const rootReal = fs.realpathSync(root);
   const server = http.createServer((req, res) => {
     const p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
     if (p === '/__pdfview.html') { res.writeHead(200, { 'Content-Type': TYPES['.html'] }); res.end(PDFVIEW); return; }
@@ -37,7 +38,13 @@ export function startServer(root) {
     const rel = p === '/' ? 'index.html' : p.slice(1);
     const file = path.resolve(root, rel);
     if (!file.startsWith(path.resolve(root))) { res.writeHead(403); res.end(); return; }
-    send(res, file);
+    // 심볼릭 링크가 문서 루트 밖을 가리키면 위 문자열 검사는 통과하지만 읽는 쪽은 링크를 따라간다 —
+    // 실제 경로가 루트 안인지 한 번 더 본다.
+    fs.realpath(file, (err, real) => {
+      if (err) { res.writeHead(404); res.end('not found'); return; }
+      if (real !== rootReal && !real.startsWith(rootReal + path.sep)) { res.writeHead(403); res.end(); return; }
+      send(res, real);
+    });
   });
   return new Promise(resolve => server.listen(0, '127.0.0.1', () => {
     const { port } = server.address();
