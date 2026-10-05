@@ -1,4 +1,4 @@
-/* cdnjs 에서 <script>로 불러오는 SheetJS(xlsx 0.18.5, SRI 걸림)의 전역 XLSX — 쓰는 부분만 적는다.
+/* cdn.sheetjs.com 에서 <script>로 불러오는 SheetJS(xlsx 0.20.3, SRI 걸림)의 전역 XLSX — 쓰는 부분만 적는다.
  * 번들에 넣지 않는 이유: 넣으면 파일이 약 1MB 커지고, 버전 고정·무결성 검사를 CDN 쪽에 두는
  * 지금 구조(.claude/rules/app.md "SRI" 절)가 바뀐다. */
 type XlsxSheet = { [cell: string]: unknown } & {

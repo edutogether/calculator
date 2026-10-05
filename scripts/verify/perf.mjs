@@ -10,7 +10,7 @@
  *          쓰는 도중(조작 시작 기준 ms, 다음 화면이 그려질 때까지): 수량 하나를 바꿔 합계가 바뀌기까지,
  *          「다른 제품」을 눌러 제품 고르기 창이 열리기까지.
  * 판마다 한 번씩 돌아가며 재서(원본 → 다른 판들 → 원본 …) 시간대에 따른 흔들림이 모든 판에 고르게 들어가게 한다.
- * 외부 리소스(구글 폰트·cdnjs)는 한 번 받아 두고 재사용한다 — 네트워크 흔들림을 빼고 앱만 비교하려고.
+ * 외부 리소스(구글 폰트·SheetJS)는 한 번 받아 두고 재사용한다 — 네트워크 흔들림을 빼고 앱만 비교하려고.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -36,7 +36,7 @@ const baseDir = path.join(ROOT, '.verify', 'perf-base');
 fs.rmSync(baseDir, { recursive: true, force: true }); fs.mkdirSync(baseDir, { recursive: true });
 for (const f of ['index.html', 'og.jpg']) fs.writeFileSync(path.join(baseDir, f), execFileSync('git', ['show', `${FREEZE_TAG}:${f}`], { cwd: ROOT, maxBuffer: 64 << 20 }));
 
-const EXTERNAL = /^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com)\//;
+const EXTERNAL = /^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.sheetjs\.com)\//;
 const cache = new Map();
 async function fromCache(route) {
   const url = route.request().url();

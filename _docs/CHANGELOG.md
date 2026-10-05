@@ -5,6 +5,9 @@ InKY Calculator의 변경 이력. **git 커밋 기록에서 확인되는 사실�
 
 ## 2026-10-05
 
+- **보안 지적 대응 2차 — 엑셀 라이브러리(SheetJS)를 0.18.5(cdnjs)에서 0.20.3(`cdn.sheetjs.com`)으로 옮겼다.**
+  SRI·`crossorigin` 유지, CSP `script-src`의 외부 호스트는 `cdn.sheetjs.com` 하나(cdnjs는 뺌).
+  `scripts/check-xlsx.js` 추가(버전 0.19.3 이상·SRI·CSP 호스트 검사, PR에서는 `--live`로 실제 파일 해시 대조).
 - **`check-csp.js`가 `dist/` 배포 산출물을 `index.html`·`og.jpg` 두 파일로만 제한한다.** 그 밖
   파일이 하나라도 있으면(이름 무관) 검사가 실패한다 — 과거 `.git` 디렉터리가 통째로 배포된 사고와
   같은 종류를 배포 전에 잡는다. Codex 인계 가지(`codex/claude-handoff-20261005`)에서 이 변경만

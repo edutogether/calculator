@@ -495,6 +495,8 @@ VPN류 앱이 주입하는 것으로 추정된다.
 
 ## 🟢 외부 스크립트에 SRI를 걸었다 — 구글 폰트는 걸 수 없다 (2026-09-10)
 
+> ⚠ 2026-10-05: xlsx 스크립트는 cdnjs 0.18.5에서 `cdn.sheetjs.com` 0.20.3으로 옮겼다 — 아래 "SheetJS를 옮긴 이유" 절 참고. 아래 설명 중 cdnjs 주소·해시는 옛 값이고, SRI를 거는 이유와 구글 폰트에 못 거는 이유는 그대로다.
+
 CSP의 `script-src`는 "cdnjs.cloudflare.com에서 왔다"까지만 보증하고, **그 파일의 내용이
 cdnjs 쪽에서 바뀌는 것**은 막지 못한다. `xlsx.full.min.js`는 버전이 URL에 박혀 있는
 불변 파일(`/xlsx/0.18.5/…`)이라 SRI를 걸 수 있는 조건을 갖췄다.
@@ -696,3 +698,19 @@ CSS `html.js .nojs{display:none}`. 카드 뒤 스크립트만으로는 느린 �
 - 두 창의 상태는 App 밖 `dlgBox`·`optBox`에 둔다 — App 안의 state 로 되돌리면 창 하나를 여는 데 화면 전체가
   다시 그려져 한 장면 늦어진다(실측).
 - 재는 법: `node scripts/verify/perf.mjs --runs 7 --rates 4,6 --device phone React=dist`(PC는 `--device pc`).
+
+## 🟢 SheetJS를 `cdn.sheetjs.com` 0.20.3으로 옮겼다 (2026-10-05, 보안 지적 대응)
+
+가져오기(엑셀)는 사용자가 고른 파일을 SheetJS로 직접 읽는다. 0.19.2 이하에는 알려진 취약점
+(CVE-2023-30533)이 있고, **cdnjs에는 0.18.5보다 새 버전이 없다**(`api.cdnjs.com/libraries/xlsx`로
+확인) — 고친 버전은 SheetJS 공식 배포처 `cdn.sheetjs.com`에서만 받을 수 있다. 그래서:
+
+- `index.html`의 `<script>`가 `https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js`를 SRI(sha512)·
+  `crossorigin="anonymous"`와 함께 부른다. SRI 해시는 같은 주소를 두 번 따로 받아 **두 번 다 같은 값**임을 확인한 뒤 적었다.
+- CSP `script-src`의 외부 호스트는 **`https://cdn.sheetjs.com` 하나뿐**이다(cdnjs는 뺐다). 와일드카드·`unsafe-*` 금지.
+- `scripts/check-xlsx.js`가 위를 배포 전에 검사한다(버전 0.19.3 이상, SRI·crossorigin, CSP 호스트 하나, 와일드카드 없음).
+  PR에서는 `--live`로 **실제 파일을 받아 해시·버전까지 대조**한다(배포가 외부 CDN에 기대지 않도록 배포 쪽은 정적 검사만).
+  각 항목을 일부러 어긋나게 해서 실패하는 것을 확인했다(변이 7종).
+- 버전을 올릴 때: 새 URL의 파일을 받아 `openssl dgst -sha512 -binary … | openssl base64 -A`로 해시를 구해 `integrity`에 쓰고,
+  `node scripts/check-xlsx.js --live`로 대조한다. `verify` 도구의 외부 캐시 정규식(`capture.mjs`·`perf.mjs`·`nojs-flash.mjs`)도 같은 호스트다.
+- 엑셀 내보내기→가져오기 왕복은 `npm run verify`의 xlsx 시나리오가 0.18.5 시절 결과(셀 값)와 같은지로 확인했다.

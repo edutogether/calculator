@@ -52,6 +52,10 @@ jobs:
       - name: CSP 해시가 배포될 dist/index.html 과 맞는지 검사
         run: node scripts/check-csp.js
 
+      # 엑셀 라이브러리(SheetJS)가 0.19.3 이상·SRI·CSP 호스트 하나로 고정돼 있는지(네트워크 없이).
+      - name: 엑셀 라이브러리 고정 검사
+        run: node scripts/check-xlsx.js
+
       # 첫 화면(권장안)이 협의회비 상한 비율을 지키는지 — 어기면 배포하지 않는다.
       - name: 권장안이 협의회비 상한을 지키는지 검사
         run: node scripts/check-recommended.js
