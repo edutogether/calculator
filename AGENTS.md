@@ -121,6 +121,7 @@ CSP가 차단한다. 스타일은 `<style>` 블록에 규칙으로 넣고, 핸�
 - **화면·동작을 바꾸지 않는 수정**(리팩터·도구 교체)이면 대조 도구로 전후를 비교한다:
   `npm run verify -- run dist` — 기준 태그의 원본과 지금 `dist/`를 같은 때에 찍어 픽셀·DOM·
   공유 주소·엑셀·인쇄 PDF까지 대조한다(`scripts/verify/`, 도구 자체 검증은 `npm run verify:selftest`).
+- **`main`을 향한 PR을 열면 위 검사(빌드·`check-*`·`npm test`)가 `pr-check.yml`로 자동으로 돈다**(배포는 하지 않는다).
 - 배포: `main`에 push → **Firebase Hosting**(GitHub Actions, `.github/workflows/firebase-hosting.yml`).
 - 손으로 배포: 위 검사를 전부 통과시킨 뒤
   `firebase deploy --only hosting --project inky-calculator`.

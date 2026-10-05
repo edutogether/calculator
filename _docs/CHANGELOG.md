@@ -15,6 +15,12 @@ InKY Calculator의 변경 이력. **git 커밋 기록에서 확인되는 사실�
 - **AGENTS.md에 조직 공통 규칙 절을 추가했다**(팀장 지시 — Codex 클라우드·Claude 클라우드에서도 이
   저장소만 받아 일할 수 있게 준비). `D:\Projects\_shared\constitution.md` 요약을 그대로 옮기고,
   "로컬 전용 작업" 줄에 이 앱의 것(Firebase 프리뷰 채널, CPU 스로틀 성능 측정)을 더했다.
+- AGENTS.md 머리말에 "Codex 등 `.claude/`를 자동으로 읽지 않는 도구는 `.claude/rules/app.md`의
+  금지·함정 목록도 반드시 읽을 것" 한 줄을 추가했다(팀장 지시).
+- **`main`을 향한 PR마다 검사가 자동으로 돌게 했다**(대표 지시 — Codex 클라우드 PR도 기본 검사).
+  `.github/workflows/pr-check.yml` 추가 — `firebase-hosting.yml`의 배포 전 검사(타입·린트·빌드·
+  `check-*`·vitest)와 같은 단계, 배포·비밀 키는 없다. 확인용 PR(#1, 가지 `ci/pr-check-verify`,
+  합치지 않고 닫음)에서 초록으로 끝나는 것을 확인했다(18초).
 
 ## 2026-09-26
 
