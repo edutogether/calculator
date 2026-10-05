@@ -159,7 +159,7 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
     (['mCap', 'mPer'] as const).forEach(id => {
       const el = byId<HTMLInputElement>(id);
       const onChange = (): void => {
-        const raw = Math.max(0, parseInt(el.value.replace(/[^0-9]/g, '')) || 0);
+        const raw = int0(el.value.replace(/[^0-9]/g, ''));
         if (!raw) return;
         const ok = fixPer(raw);
         if (id === 'mCap') M.cap = ok; else M.per = ok;
@@ -233,7 +233,7 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
       + '남는 예산에 맞춰 인당 금액을 한 번에 맞춰 드려요.', null);
   }
   function onMeetInput(id: 'mN' | 'mC' | 'mCap' | 'mPer', e: FormEvent<HTMLInputElement>): void {
-    const v = Math.max(0, parseInt(e.currentTarget.value.replace(/[^0-9]/g, '')) || 0);
+    const v = int0(e.currentTarget.value.replace(/[^0-9]/g, ''));
     if (id === 'mN') M.n = v; else if (id === 'mC') M.c = v; else if (id === 'mCap') M.cap = v;
     else M.per = v;
     render();
@@ -581,7 +581,7 @@ function RowView({ it, flashed, onAct }: RowProps): ReactNode {
         <div className="m-q"><span className="qty"><button data-act="m" aria-label="수량 감소" onClick={e => onAct(it, 'm', e)}>−</button>
           <input className="n" defaultValue={String(INITIAL[it.id].qty)} data-act="q" inputMode="numeric" aria-label={`${it.n} 수량`}
             ref={el => { if (el) refs.rowQty.set(it.id, el); else refs.rowQty.delete(it.id); }}
-            onInput={e => { it.qty = Math.max(0, parseInt(e.currentTarget.value.replace(/[^0-9]/g, '')) || 0); render(); }} />
+            onInput={e => { it.qty = int0(e.currentTarget.value.replace(/[^0-9]/g, '')); render(); }} />
           <button data-act="p" aria-label="수량 증가" onClick={e => onAct(it, 'p', e)}>+</button></span></div>
         <div className="amt n m-a" data-f="a">{it.on ? F(amt) : '—'}</div>
       </div>

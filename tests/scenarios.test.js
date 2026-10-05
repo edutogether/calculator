@@ -378,3 +378,23 @@ describe('시나리오 16 — 너무 큰 파일은 가져오기가 읽지 않는
     expect($(win, '#mask').classList.contains('on')).toBe(true);
   });
 });
+
+describe('시나리오 17 — 칸에 직접 친 아주 긴 숫자도 합계를 ∞·NaN 으로 만들지 않는다 (보안 지적 대응)', () => {
+  it('수량·인원·횟수·지급액 칸에 400자리 숫자를 쳐도 합계가 숫자로 찍힌다', async () => {
+    const HUGE = '9'.repeat(400);
+    const win = await loadApp();
+    await type(win, '#body .row[data-i="0"] [data-act="q"]', HUGE);
+    await type(win, '#mN', HUGE);
+    await type(win, '#mC', HUGE);
+    await click(win, '#mMan');
+    await type(win, '#mPer', HUGE);
+    expect(text(win, '#tot')).toMatch(/^[0-9,]+원$/);
+    expect($(win, '#sum').innerHTML).not.toMatch(/NaN|∞|Infinity/);
+  });
+
+  it('보통 값은 그대로다 — 수량 12 를 치면 12 로 계산된다', async () => {
+    const win = await loadApp();
+    await type(win, '#body .row[data-i="0"] [data-act="q"]', '12');
+    expect($(win, '#body .row[data-i="0"] [data-act="q"]').value).toBe('12');
+  });
+});
