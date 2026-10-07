@@ -3,6 +3,12 @@
 InKY Calculator의 변경 이력. **git 커밋 기록에서 확인되는 사실만** 적는다 — 확인 안 되는 것은
 적지 않는다(DOC-STANDARD 원칙). 날짜는 커밋 메시지의 승인 날짜 기준.
 
+## 2026-10-07
+
+- **파비콘을 InKY 로고(필름까지 전체)로 바꾸고, 비활성 탭의 회색 전환을 없앴다**(대표 지시 — COMMON_STANDARDS §33).
+  `_shared/favicons/inky-camera-64.png`(64×64, Poster Studio·Voice Cinema 와 같은 파일)를 그대로 `data:` URI 로 박았다(파일 하나로 완결돼야 하는 앱이라 별도 파일은 두지 않음).
+  이모지 흑백 아이콘과 `visibilitychange` 로 주소를 바꾸던 코드를 지웠다. 시나리오 18 이 로고 바이트와 "탭이 뒤로 가도 그대로"를 지킨다.
+
 ## 2026-10-05
 
 - **보안 지적 대응 2차 — 엑셀 라이브러리(SheetJS)를 0.18.5(cdnjs)에서 0.20.3(`cdn.sheetjs.com`)으로 옮겼다.**

@@ -30,8 +30,6 @@ const LIVE_URL = 'https://calc.edutogether.kr/';   // 이 견적기가 올라가
 const NOTES = "단가는 2026-09-07 다나와 · 배너 전문몰 · 통신사 공식 요금표 기준이며 배송비는 포함하지 않았어요. 공통 물품은 운영 총괄이 한 번에 사서 부스로 나누기로 해요. 여기서 고른 물건 가운데 각 부스에 공통으로 사용되는 것은 ①②③④ 화면에도 배분된 수량 만큼 그대로 표시됩니다. 부스 화면의 몫을 올리면 다른 부스 몫에서 그만큼 빠지고, 공통 전체 수량을 넘길 수는 없게 설계되어 있어요.";
 const IMPORT_MAX_BYTES = 10 * 1024 * 1024;   // 가져오기 파일 크기 상한 — 「엑셀로 저장」이 만드는 파일은 수십 KB 다.
 const HEAD = ['구분', '품목', '선택 상품', '규격 · 사양', '수량', '단가(원)', '금액(원)', '구매 링크'];
-const FAVI_ON = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Ctext%20y='.9em'%20font-size='58'%3E%F0%9F%A7%BE%3C/text%3E%3C/svg%3E";
-const FAVI_OFF = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Cfilter%20id='g'%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3C/filter%3E%3Ctext%20y='.9em'%20font-size='58'%20filter='url(%23g)'%3E%F0%9F%A7%BE%3C/text%3E%3C/svg%3E";
 
 /** render() 자리 — 모델 부수효과를 돌리고 그 자리에서 곧바로 다시 그린다. */
 const render = (): void => flushSync(commit);
@@ -140,16 +138,11 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
   const version = getVersion();
   useLayoutEffect(() => { paintInputs(); }, [version]);
 
-  // 문서 전체에 걸린 것 — Esc 로 창 닫기, 탭이 뒤로 가면 파비콘 흑백.
+  // 문서 전체에 걸린 것 — Esc 로 창 닫기.
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') { closeDlg(); closeOpts(); } };
-    const onVis = (): void => {
-      const l = document.getElementById('favi') as HTMLLinkElement | null;
-      if (l) l.href = document.hidden ? FAVI_OFF : FAVI_ON;
-    };
     document.addEventListener('keydown', onKey);
-    document.addEventListener('visibilitychange', onVis);
-    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('visibilitychange', onVis); };
+    return () => { document.removeEventListener('keydown', onKey); };
   }, []);
 
   // 인당 상한·지급액 칸 — 다 적고 칸을 벗어날 때(change) 한 번만 확인한다(치는 중에 잔소리하지 않게).
