@@ -349,12 +349,16 @@ PDF가 필요하면 **「인쇄하기」에서 프린터를 「Microsoft Print t
 
 - **탭 제목은 `InKY Calculator`**다. 화면 안의 큰 제목(h1)은 그대로 두었다 — 대표님이 지적한 것은
   탭이고, 긴 문장은 탭에서 잘려 보였다.
-- **파비콘은 🧾(영수증) 이모지를 그린 SVG 를 `data:` URI 로 박았다.** 외부 `.ico`·`.png` 파일로
+- **파비콘은 InKY 로고(노란 «IN» 카메라, 필름까지 전체 — 자르거나 편집하지 말 것, 대표님 지시)를 `data:` URI 로 박았다**(2026-10-07 대표 지시, COMMON_STANDARDS §33 —
+  처음엔 🧾 이모지 SVG 였다. 64×64 투명 PNG, 원본은 `D:/Projects/_shared/favicons/inky-camera-64.png` — Poster Studio·Voice Cinema 와 같은 파일). 외부 `.ico`·`.png` 파일로
   두면 **카톡으로 보낸 HTML 파일 하나만 열었을 때 아이콘이 깨진다** — 파일 하나로 완결돼야 한다는
-  이 앱의 요구사항 때문이다. 파일을 만들지 말 것.
-- **탭이 비활성이면 흑백**으로 바뀐다. 컬러용·흑백용 data URI 두 개를 미리 두고
-  `visibilitychange` 에서 `#favi` 의 `href` 를 바꿔 끼운다. 흑백은 SVG 안의
-  `feColorMatrix type=saturate values=0` 필터로 만든다(CSS `filter` 보다 SVG 렌더링에서 확실하다).
+  이 앱의 요구사항 때문이다. 파일을 만들지 말 것(배포 파일 수가 늘어 `found 2 files`도 어긋난다).
+  새로 그리거나 AI 로 다시 만들지 않는다 — 팀장이 InKY 로고 원본에서 가져와 둔 것이고,
+  `tests/scenarios.test.js` 시나리오 18 이 바이트(sha256)·크기를 고정한다. 아이콘을 바꿀 때는 그 상수도 함께 바꾼다.
+- **탭이 비활성이어도 아이콘은 그대로다.** 예전에는 `visibilitychange` 에서 흑백 아이콘으로 바꿔 끼웠는데
+  대표님이 **회색 전환을 모든 내부 사이트에서 폐기**했다(탭에 뜰 때와 즐겨찾기에 들어갈 때 늘 같은 아이콘이어야 한다).
+  아이콘 주소를 바꾸는 코드를 다시 넣지 말 것 — 시나리오 18 이 `visibilitychange`·`blur`·`focus` 뒤에도 주소가 같은지 본다.
+- 홈 화면 아이콘(apple-touch-icon)·manifest 는 **원래 없다** — 이번에도 만들지 않았다.
 - **`<link rel="icon">` 은 반드시 `<head>` 안에 둔다.** `<body>` 에 두면 Chrome 이 그것을 쓰면서도
   `/favicon.ico` 를 따로 찾아가 **콘솔에 404 가 남는다**(실제로 그렇게 짰다가 확인하고 옮겼다).
   head 로 옮긴 뒤 favicon 관련 네트워크 요청이 0건이 됐다.

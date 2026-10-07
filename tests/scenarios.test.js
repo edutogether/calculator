@@ -9,6 +9,7 @@
  * §21-1(빈 게이트 금지): 모든 검사는 대상이 실제로 있는지부터 확인하고 판정한다.
  */
 import { describe, it, expect } from 'vitest';
+import { createHash } from 'node:crypto';
 import {
   HTML, loadApp, tick, $, type, commit, click, text, won, sumRow, meetOnly, sharedUrl, encodeState, importRows,
 } from './helpers.js';
@@ -396,5 +397,40 @@ describe('시나리오 17 — 칸에 직접 친 아주 긴 숫자도 합계를 �
     const win = await loadApp();
     await type(win, '#body .row[data-i="0"] [data-act="q"]', '12');
     expect($(win, '#body .row[data-i="0"] [data-act="q"]').value).toBe('12');
+  });
+});
+
+describe('시나리오 18 — 파비콘은 InKY 로고(필름까지 전체) 하나로 늘 같다 (2026-10-07 대표 지시)', () => {
+  /* 기준은 팀장이 InKY 로고 원본에서 필름까지 전체를 그대로 가져온 _shared/favicons/inky-camera-64.png(64×64) — 같은 파일이다.
+   * Poster Studio·Voice Cinema 도 같은 파일을 쓴다. 새로 그리거나 다시 만들지 않는다.
+   * 파일 하나로 완결돼야 하는 앱이라 data: URI 로 박는다(별도 파일을 두면 내려받은 HTML 만 열 때 깨진다). */
+  const LOGO_SHA256 = 'f74e7e0a1dc21be7f003d691ae308396ccdee10d2a681af85c7cff5cad6558d5';
+  const iconHref = win => [...win.document.querySelectorAll('link[rel~="icon"]')].map(l => l.getAttribute('href'));
+
+  it('아이콘 링크는 하나고, InKY 카메라 로고 PNG(64×64)와 바이트까지 같다', async () => {
+    const win = await loadApp();
+    const hrefs = iconHref(win);
+    expect(hrefs).toHaveLength(1);
+    const m = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(hrefs[0]);
+    expect(m).not.toBeNull();
+    const bytes = Buffer.from(m[1], 'base64');
+    expect(createHash('sha256').update(bytes).digest('hex')).toBe(LOGO_SHA256);
+    expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([64, 64]);
+    expect(win.document.querySelector('link[rel~="icon"]').getAttribute('type')).toBe('image/png');
+  });
+
+  it('탭이 뒤로 가거나 창이 포커스를 잃어도 아이콘 주소가 그대로다(회색 전환 없음)', async () => {
+    const win = await loadApp();
+    const before = iconHref(win);
+    Object.defineProperty(win.document, 'hidden', { configurable: true, value: true });
+    win.document.dispatchEvent(new win.Event('visibilitychange'));
+    win.dispatchEvent(new win.Event('blur'));
+    await tick();
+    expect(iconHref(win)).toEqual(before);
+    Object.defineProperty(win.document, 'hidden', { configurable: true, value: false });
+    win.document.dispatchEvent(new win.Event('visibilitychange'));
+    win.dispatchEvent(new win.Event('focus'));
+    await tick();
+    expect(iconHref(win)).toEqual(before);
   });
 });
