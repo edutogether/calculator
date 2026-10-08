@@ -22,6 +22,7 @@ import {
   M, D, INITIAL, perFit, pool, groups, booths, TAB, SECS, NO, withNo, moveShare, meetOverRatio, autoFit, runtime,
 } from './model.ts';
 import { stateStr } from './share-state.ts';
+import { checkZip, sheetTooBig, IMPORT_MAX_ROWS, IMPORT_MAX_COLS } from './xlsx-guard.ts';
 import { commit, subscribe, getVersion } from './store.ts';
 import type { Item } from './types.ts';
 
@@ -308,21 +309,33 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
     const f = (input.files as FileList)[0]; if (!f) return;
     const setB = (t: string): void => flushSync(() => setImpText(t));
     const fail = (t: string, body: string): void => { dialog(t, body, null); setB('가져오지 못했어요'); };
-    if (f.size > IMPORT_MAX_BYTES) {
-      fail('파일이 너무 커요',
-        `「${f.name}」은 ${Math.ceil(f.size / 1048576)}MB 로, 가져올 수 있는 크기(10MB)를 넘어요.\n\n`
-        + '이 계산기의 「엑셀로 저장」으로 만든 파일은 훨씬 작아요. 그 파일을 올려 주세요.');
+    // 너무 큰 파일은 읽기 전에 돌려보낸다(탭이 멈추지 않게 — 한도는 src/xlsx-guard.ts)
+    const tooBig = (t: string, body: string): void => {
+      fail(t, body + '\n\n이 계산기의 「엑셀로 저장」으로 만든 파일은 훨씬 작아요. 그 파일을 올려 주세요.');
       input.value = '';
       setTimeout(() => setB('가져오기'), 2600);
+    };
+    if (f.size > IMPORT_MAX_BYTES) {
+      tooBig('파일이 너무 커요', `「${f.name}」은 ${Math.ceil(f.size / 1048576)}MB 로, 가져올 수 있는 크기(10MB)를 넘어요.`);
       return;
     }
     try {
-      let rows: unknown[][];
+      let rows: unknown[][] = [];
+      let big: [string, string] | null = null;
       try {
-        const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        if (!sheet) throw new Error('sheet');
-        rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const buf = await f.arrayBuffer();
+        const zip = await checkZip(buf);
+        if (zip === 'entries' || zip === 'unpacked') {
+          big = ['파일이 너무 커요', `「${f.name}」은 풀면 가져올 수 있는 크기(20MB)나 항목 수(200개)를 넘어요.`];
+        } else if (zip === 'broken') {
+          throw new Error('zip');
+        } else {
+          const wb = XLSX.read(buf, { type: 'array', sheetRows: IMPORT_MAX_ROWS + 1 });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          if (!sheet) throw new Error('sheet');
+          if (sheetTooBig(sheet['!ref'])) big = ['표가 너무 커요', `「${f.name}」의 첫 시트는 ${F(IMPORT_MAX_ROWS)}줄·${IMPORT_MAX_COLS}칸을 넘어요.`];
+          else rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        }
       } catch (_) {
         fail('엑셀 파일로 읽지 못했어요',
           `「${f.name}」을 엑셀 파일로 열 수 없었어요.\n\n`
@@ -330,6 +343,7 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
           + '이 계산기의 「엑셀로 저장」으로 만든 파일을 올리시면 가장 확실해요.');
         return;
       }
+      if (big) { tooBig(big[0], big[1]); return; }
       // 파일을 먼저 다 훑어 적용할 것을 모아 둔다(이 단계에서는 화면을 바꾸지 않는다)
       const picks: { it: Item; sel: number | null; qty: number | null }[] = [];
       let meetIn: { per: number; n: number | null; c: number | null } | null = null;

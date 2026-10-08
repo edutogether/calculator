@@ -10,6 +10,12 @@
 # 전체를 끄는 것이라 이 저장소처럼 워크플로가 하나면 **검사(test)까지 같이 꺼진다**
 # (§21-6) — 그래서 트리거에는 필터를 두지 않고, 판정을 별도 잡(changes)으로 빼서
 # **deploy 잡에만** 그 결과를 `if:`로 건다. test·changes 둘 다 항상 돈다.
+#
+# 🔴 비밀(Firebase 서비스 계정)을 만지는 잡에서는 저장소 코드를 빌드·실행하지 않는다(2026-10-09 보안 지적 대응):
+#   test    — 의존성 설치·빌드·검사. 비밀 없음. 결과물(dist/)을 산출물로 올리고 그 지문(sha256)을 출력한다.
+#   deploy  — 산출물을 내려받아 지문이 같은지 확인한 뒤 배포만 한다. npm·빌드·저장소 스크립트 없음.
+#   live    — 배포 뒤 라이브 확인. 저장소 스크립트를 돌리지만 비밀 없음.
+# 수동 실행(workflow_dispatch)으로 main 이 아닌 가지를 고르면 deploy 는 돌지 않는다.
 name: Firebase Hosting 배포
 
 on:
@@ -24,6 +30,8 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    outputs:
+      dist_sha: ${{ steps.dist.outputs.sha }}
     steps:
       # v4 는 Node.js 20 위에서 도는 액션이라 러너가 24로 강제 실행하며 경고를 띄웠다.
       # v7 부터 액션 자체가 node24 를 쓴다(runs.using: node24) — 그래서 경고가 사라진다.
@@ -78,6 +86,21 @@ jobs:
       # 카카오톡 등 공유 카드(Open Graph·Twitter Card) 태그가 <head> 에 실제로 있는지.
       - name: 공유 카드 태그 검사
         run: node scripts/check-og.js
+
+      # 배포할 산출물의 지문 — deploy 잡이 내려받은 것과 같은지 대조한다.
+      - name: 산출물 지문 계산
+        id: dist
+        run: |
+          cd dist
+          echo "sha=$(find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: 산출물 올리기 (dist/)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
 
   # 이번 push가 배포할 만한 변경인지 판정만 한다 — 항상 돈다(문서 전용 커밋이어도 돈다).
   changes:
@@ -135,26 +158,39 @@ jobs:
 
   deploy:
     needs: [test, changes]
-    if: needs.changes.outputs.code == 'true'
+    # 수동 실행으로 main 이 아닌 가지가 골라져도 라이브에는 배포하지 않는다.
+    if: needs.changes.outputs.code == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
+      # 저장소 코드는 firebase.json 을 읽으려고만 받는다 — 여기서 npm·빌드·저장소 스크립트를 돌리지 않는다.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7
         with:
           node-version: '24'
 
-      # firebase.json 의 public 이 dist 라, 이 잡에서도 같은 커밋으로 다시 빌드한다.
-      # test 잡이 검사한 것과 같은 산출물인지는 아래 헤더·공유 카드 라이브 확인과
-      # check-csp.js(빌드가 결정적이라 같은 커밋이면 같은 바이트)로 담보한다.
-      - name: 의존성 설치
-        run: npm ci
+      - name: 산출물 내려받기 (dist/)
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: dist
+          path: dist/
 
-      - name: 빌드 (dist/)
-        run: npm run build
+      # 내려받은 산출물이 test 잡이 검사한 것과 바이트까지 같은지.
+      - name: 산출물 지문 확인
+        env:
+          EXPECTED: ${{ needs.test.outputs.dist_sha }}
+        run: |
+          cd dist
+          got="$(find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+          echo "기대 $EXPECTED / 실제 $got"
+          test -n "$EXPECTED" && test "$got" = "$EXPECTED"
 
-      - name: 배포할 산출물의 CSP 해시 재확인
-        run: node scripts/check-csp.js
+      # firebase.json 에 배포 전후에 명령을 돌리는 훅이 끼어들면 비밀이 있는 이 잡에서 실행된다 — 막는다.
+      - name: firebase.json 에 실행 훅이 없는지 확인
+        run: |
+          if grep -Eq '"(predeploy|postdeploy)"' firebase.json; then echo "firebase.json 에 predeploy/postdeploy 가 있다"; exit 1; fi
 
       - name: Firebase Hosting 에 배포
         uses: FirebaseExtended/action-hosting-deploy@500ac625ca2dd40cbd15f7659af953801858032a  # v0
@@ -164,9 +200,28 @@ jobs:
           channelId: live
           firebaseToolsVersion: 15.32.1
 
-      # 이번 이전의 목적이 응답 헤더라, 헤더가 빠진 배포는 성공이 아니다.
-      # 두 주소를 다 본다: 사람들이 쓰는 것은 공식 주소이고, Firebase 기본 주소와 결과가
-      # 갈리면 그건 커스텀 도메인 쪽 설정만 틀어졌다는 뜻이라 그 자체가 잡아야 할 신호다.
+  # 이번 이전의 목적이 응답 헤더라, 헤더가 빠진 배포는 성공이 아니다.
+  # 두 주소를 다 본다: 사람들이 쓰는 것은 공식 주소이고, Firebase 기본 주소와 결과가
+  # 갈리면 그건 커스텀 도메인 쪽 설정만 틀어졌다는 뜻이라 그 자체가 잡아야 할 신호다.
+  # 저장소 스크립트를 돌리는 잡이라 비밀이 없다(deploy 잡과 일부러 나눴다).
+  live:
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7
+        with:
+          node-version: '24'
+
+      - name: 산출물 내려받기 (dist/)
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: dist
+          path: dist/
+
       - name: 보안 헤더 확인 — 공식 주소
         run: node scripts/check-headers.js https://calc.edutogether.kr/
 
