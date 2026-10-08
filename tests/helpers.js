@@ -19,6 +19,7 @@
 import { JSDOM } from 'jsdom';
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -120,4 +121,41 @@ async function importRows(win, rows) {
   for (let i = 0; i < 50 && text(win, '#pImp') === '가져오기'; i++) await tick();
 }
 
-export { HTML, loadApp, tick, $, type, commit, click, text, won, sumRow, meetOnly, sharedUrl, encodeState, importRows };
+/** 가져오기 한도 시험용 — 진짜 zip(.xlsx 껍데기)을 직접 만든다. entries: [이름, 원본 Buffer, (선택)선언할 풀린 크기].
+ *  풀린 크기를 일부러 거짓으로 적어 "선언값만 믿으면 놓치는" 파일도 만들 수 있다. */
+function buildZip(entries) {
+  const crc32 = b => { let r = ~0; for (const x of b) { let c = (r ^ x) & 255; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; r = c ^ (r >>> 8); } return (~r) >>> 0; };
+  const parts = [], cd = []; let off = 0;
+  for (const [name, raw, declared] of entries) {
+    const nb = Buffer.from(name), def = zlib.deflateRawSync(raw), crc = crc32(raw.length > 1 << 20 ? raw.subarray(0, 1 << 20) : raw);
+    const usz = declared ?? raw.length;
+    const l = Buffer.alloc(30); l.writeUInt32LE(0x04034b50, 0); l.writeUInt16LE(20, 4); l.writeUInt16LE(8, 8); l.writeUInt32LE(crc, 14);
+    l.writeUInt32LE(def.length, 18); l.writeUInt32LE(usz, 22); l.writeUInt16LE(nb.length, 26);
+    const c = Buffer.alloc(46); c.writeUInt32LE(0x02014b50, 0); c.writeUInt16LE(20, 4); c.writeUInt16LE(20, 6); c.writeUInt16LE(8, 10); c.writeUInt32LE(crc, 16);
+    c.writeUInt32LE(def.length, 20); c.writeUInt32LE(usz, 24); c.writeUInt16LE(nb.length, 28); c.writeUInt32LE(off, 42);
+    parts.push(l, nb, def); cd.push(c, nb); off += 30 + nb.length + def.length;
+  }
+  const cdb = Buffer.concat(cd), e = Buffer.alloc(22);
+  e.writeUInt32LE(0x06054b50, 0); e.writeUInt16LE(entries.length, 8); e.writeUInt16LE(entries.length, 10); e.writeUInt32LE(cdb.length, 12); e.writeUInt32LE(off, 16);
+  return Buffer.concat([...parts, cdb, e]);
+}
+
+/** 파일 하나를 가져오기에 올린다. read 가 몇 번 불렸는지·넘겨받은 옵션을 돌려준다(한도에 걸리면 0번). */
+async function importFile(win, { buf, ref = 'A1:H5', rows = [], size, inflate = true }) {
+  if (inflate) { win.DecompressionStream = DecompressionStream; win.ReadableStream = ReadableStream; }   // jsdom 에는 없다 — Node 것을 빌려 준다(inflate:false 면 없는 브라우저처럼)
+  const calls = { read: 0, opts: null, toJson: 0 };
+  win.XLSX = {
+    read: (_b, opts) => { calls.read++; calls.opts = opts; return { SheetNames: ['S'], Sheets: { S: { '!ref': ref } } }; },
+    utils: { sheet_to_json: () => { calls.toJson++; return rows; } },
+  };
+  const input = $(win, '#fImp');
+  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length);
+  const file = { name: 'test.xlsx', size: size ?? buf.length, arrayBuffer: async () => ab };
+  Object.defineProperty(input, 'files', { configurable: true, value: [file] });
+  input.dispatchEvent(new win.Event('change', { bubbles: true }));
+  // 풀어서 세는 데 걸리는 시간은 기계마다 다르다 — 횟수가 아니라 시간으로 기다린다(최대 10초).
+  for (const end = Date.now() + 10000; Date.now() < end && text(win, '#pImp') === '가져오기';) await tick();
+  return calls;
+}
+
+export { buildZip, importFile, HTML, loadApp, tick, $, type, commit, click, text, won, sumRow, meetOnly, sharedUrl, encodeState, importRows };

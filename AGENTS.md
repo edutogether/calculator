@@ -124,6 +124,8 @@ CSP가 차단한다. 스타일은 `<style>` 블록에 규칙으로 넣고, 핸�
   공유 주소·엑셀·인쇄 PDF까지 대조한다(`scripts/verify/`, 도구 자체 검증은 `npm run verify:selftest`).
 - **`main`을 향한 PR을 열면 위 검사(빌드·`check-*`·`npm test`)가 `pr-check.yml`로 자동으로 돈다**(배포는 하지 않는다).
 - 배포: `main`에 push → **Firebase Hosting**(GitHub Actions, `.github/workflows/firebase-hosting.yml`).
+  잡이 셋이다 — `test`(설치·빌드·검사, 비밀 없음) → `deploy`(산출물만 받아 배포, **저장소 코드를 빌드·실행하지 않는다**) → `live`(라이브 확인).
+  수동 실행으로 `main`이 아닌 가지를 골라도 `deploy`는 돌지 않는다. 이 구조를 풀어 한 잡으로 합치지 말 것.
 - 손으로 배포: 위 검사를 전부 통과시킨 뒤
   `firebase deploy --only hosting --project inky-calculator`.
   배포 로그의 파일 수가 **`found 2 files`** 인지 볼 것(`index.html`·`og.jpg` 두 개만

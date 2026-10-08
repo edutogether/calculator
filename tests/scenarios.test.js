@@ -11,7 +11,7 @@
 import { describe, it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
 import {
-  HTML, loadApp, tick, $, type, commit, click, text, won, sumRow, meetOnly, sharedUrl, encodeState, importRows,
+  buildZip, importFile, HTML, loadApp, tick, $, type, commit, click, text, won, sumRow, meetOnly, sharedUrl, encodeState, importRows,
 } from './helpers.js';
 
 const F = n => n.toLocaleString('ko-KR');
@@ -432,5 +432,68 @@ describe('시나리오 18 — 파비콘은 InKY 로고(필름까지 전체) 하�
     win.dispatchEvent(new win.Event('focus'));
     await tick();
     expect(iconHref(win)).toEqual(before);
+  });
+});
+
+describe('시나리오 19 — 가져오기는 풀면 아주 커지는 파일·아주 넓은 표를 읽지 않는다 (보안 지적 대응)', () => {
+  const sheetXml = n => Buffer.from('<?xml version="1.0"?><worksheet><sheetData/><!--' + '0'.repeat(n) + '-->');
+  const small = () => buildZip([['[Content_Types].xml', Buffer.from('<Types/>')], ['xl/worksheets/sheet1.xml', sheetXml(100)]]);
+
+  it('정상 크기의 파일은 그대로 읽는다(줄 수 한도 1,001 을 읽기 옵션으로 건다)', async () => {
+    const win = await loadApp();
+    const calls = await importFile(win, { buf: small(), ref: 'A1:H50', rows: [['공통', '포켓 Wi-Fi', '코리아와이파이 5G 10GB (U50)', '5G · 10GB/일', 3, 20900, 0]] });
+    expect(calls.read).toBe(1);
+    expect(calls.opts.sheetRows).toBe(1001);
+    expect(text(win, '#pImp')).toBe('1개 반영됨');
+  });
+
+  it('작은 파일이 풀리면 20MB 를 넘는 압축 폭탄은 읽지 않는다(선언된 크기가 정직할 때)', async () => {
+    const win = await loadApp();
+    const buf = buildZip([['xl/worksheets/sheet1.xml', sheetXml(25 * 1024 * 1024)]]);
+    expect(buf.length).toBeLessThan(200 * 1024);
+    const calls = await importFile(win, { buf });
+    expect(calls.read).toBe(0);
+    expect(text(win, '#dlgT')).toBe('파일이 너무 커요');
+  });
+
+  it('풀어서 세는 기능이 없는 브라우저에서도, 선언된 풀린 크기가 20MB 를 넘으면 읽지 않는다', async () => {
+    const win = await loadApp();
+    const buf = buildZip([['xl/worksheets/sheet1.xml', sheetXml(25 * 1024 * 1024)]]);
+    const calls = await importFile(win, { buf, inflate: false });
+    expect(calls.read).toBe(0);
+    expect(text(win, '#dlgT')).toBe('파일이 너무 커요');
+  });
+
+  it('풀린 크기를 작게 거짓으로 적은 압축 폭탄도 실제로 풀어 세어서 막는다', async () => {
+    const win = await loadApp();
+    const buf = buildZip([['xl/worksheets/sheet1.xml', sheetXml(25 * 1024 * 1024), 100]]);
+    const calls = await importFile(win, { buf });
+    expect(calls.read).toBe(0);
+    expect(text(win, '#dlgT')).toBe('파일이 너무 커요');
+  });
+
+  it('항목이 200개를 넘는 zip 은 읽지 않는다', async () => {
+    const win = await loadApp();
+    const buf = buildZip(Array.from({ length: 201 }, (_, i) => ['f' + i + '.xml', Buffer.from('<a/>')]));
+    const calls = await importFile(win, { buf });
+    expect(calls.read).toBe(0);
+    expect(text(win, '#dlgT')).toBe('파일이 너무 커요');
+  });
+
+  it('표 범위가 1,000줄 또는 100칸을 넘으면 줄 단위로 훑지 않고 돌려보낸다', async () => {
+    for (const ref of ['A1:H1001', 'A1:CW5', 'A1:XFD1048576']) {
+      const win = await loadApp();
+      const calls = await importFile(win, { buf: small(), ref });
+      expect(calls.read).toBe(1);
+      expect(calls.toJson, ref).toBe(0);
+      expect(text(win, '#dlgT'), ref).toBe('표가 너무 커요');
+    }
+  });
+
+  it('한도 경계(1,000줄·100칸)는 받는다', async () => {
+    const win = await loadApp();
+    const calls = await importFile(win, { buf: small(), ref: 'A1:CV1000', rows: [['공통', '포켓 Wi-Fi', '코리아와이파이 5G 10GB (U50)', '5G · 10GB/일', 1, 20900, 0]] });
+    expect(calls.toJson).toBe(1);
+    expect(text(win, '#pImp')).toBe('1개 반영됨');
   });
 });

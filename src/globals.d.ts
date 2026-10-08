@@ -7,7 +7,7 @@ type XlsxSheet = { [cell: string]: unknown } & {
 };
 interface XlsxBook { SheetNames: string[]; Sheets: Record<string, XlsxSheet> }
 declare const XLSX: {
-  read(data: ArrayBuffer, opts: { type: 'array' }): XlsxBook;
+  read(data: ArrayBuffer, opts: { type: 'array'; sheetRows?: number }): XlsxBook;
   write(wb: XlsxBook, opts: { bookType: 'xlsx'; type: 'array' }): ArrayBuffer;
   utils: {
     sheet_to_json(sheet: XlsxSheet, opts: { header: 1 }): unknown[][];
