@@ -153,7 +153,8 @@ async function importFile(win, { buf, ref = 'A1:H5', rows = [], size, inflate = 
   const file = { name: 'test.xlsx', size: size ?? buf.length, arrayBuffer: async () => ab };
   Object.defineProperty(input, 'files', { configurable: true, value: [file] });
   input.dispatchEvent(new win.Event('change', { bubbles: true }));
-  for (let i = 0; i < 100 && text(win, '#pImp') === '가져오기'; i++) await tick();
+  // 풀어서 세는 데 걸리는 시간은 기계마다 다르다 — 횟수가 아니라 시간으로 기다린다(최대 10초).
+  for (const end = Date.now() + 10000; Date.now() < end && text(win, '#pImp') === '가져오기';) await tick();
   return calls;
 }
 
