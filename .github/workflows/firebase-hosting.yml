@@ -160,6 +160,11 @@ jobs:
     needs: [test, changes]
     # 수동 실행으로 main 이 아닌 가지가 골라져도 라이브에는 배포하지 않는다.
     if: needs.changes.outputs.code == 'true' && github.ref == 'refs/heads/main'
+    # 배포는 한 번에 하나씩만 — main 에 연달아 올라와도 겹쳐 게시하지 않는다. 기다리는 배포는 가장 새것 하나만 남는데,
+    # 새 배포는 그 앞 커밋을 모두 품고 있어 앞의 것이 취소돼도 잃는 것이 없다. 건너뛴 잡(문서만 바뀐 커밋)은 이 줄에 서지 않는다.
+    concurrency:
+      group: firebase-hosting-live
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       # 저장소 코드는 firebase.json 을 읽으려고만 받는다 — 여기서 npm·빌드·저장소 스크립트를 돌리지 않는다.
@@ -187,12 +192,39 @@ jobs:
           echo "기대 $EXPECTED / 실제 $got"
           test -n "$EXPECTED" && test "$got" = "$EXPECTED"
 
+      # 지문을 확인한 폴더가 Firebase 가 실제로 게시할 폴더와 같아야 한다 — firebase.json 의 public 이 dist 가 아니거나,
+      # dist 안에 링크가 있거나, 올릴 두 파일 말고 다른 것이 있으면 멈춘다.
+      - name: 게시할 폴더가 검증한 산출물과 같은지 확인
+        run: |
+          node -e "const h=require('./firebase.json').hosting; if(Array.isArray(h)||h.public!=='dist'){console.error('firebase.json 의 hosting.public 이 dist 가 아니다: '+JSON.stringify(h&&h.public));process.exit(1)}"
+          test -z "$(find dist -type l)" || { echo "dist 안에 링크가 있다"; exit 1; }
+          files="$(find dist -type f | sort | tr '\n' ' ')"
+          echo "게시될 파일: $files"
+          test "$files" = "dist/index.html dist/og.jpg "
+
       # firebase.json 에 배포 전후에 명령을 돌리는 훅이 끼어들면 비밀이 있는 이 잡에서 실행된다 — 막는다.
       - name: firebase.json 에 실행 훅이 없는지 확인
         run: |
           if grep -Eq '"(predeploy|postdeploy)"' firebase.json; then echo "firebase.json 에 predeploy/postdeploy 가 있다"; exit 1; fi
 
+      # 이 실행이 늦게 시작해, 그사이 main 에 올라온 더 새 커밋이 배포할 것(문서 밖 파일)을 바꿨다면 그 새 실행이 배포한다 —
+      # 오래된 이 실행이 나중에 덮어쓰지 않도록 건너뛴다. 새 커밋이 문서만 바꿨다면 이 실행의 산출물이 곧 최신이라 그대로 배포한다.
+      # 조회가 실패하면 배포하지 않고 실패로 멈춘다.
+      - name: 더 새 커밋이 배포할 것을 바꿨는지 확인
+        id: tip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/compare/${{ github.sha }}...main" --jq '.files[].filename' > /tmp/newer.txt
+          echo "이 실행 이후 main 에서 바뀐 파일:"; cat /tmp/newer.txt
+          if grep -vE '(\.md$|^_docs/|^\.claude/)' /tmp/newer.txt | grep -q .; then
+            echo "더 새 커밋이 배포할 것을 바꿨다 — 이 실행은 배포하지 않는다"; echo "stale=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Firebase Hosting 에 배포
+        if: steps.tip.outputs.stale == 'false'
         uses: FirebaseExtended/action-hosting-deploy@500ac625ca2dd40cbd15f7659af953801858032a  # v0
         with:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_INKY_CALCULATOR }}
