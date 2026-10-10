@@ -17,6 +17,15 @@
 - 「공유하기」는 윈도우·휴대폰의 공유창을 띄워 그 주소를 보낸다
 - 엑셀(xlsx)로 저장, 인쇄(프린터를 PDF로 고르면 PDF로 저장)
 
+## 실운영 상태 (2026-10-10 종합감사 10/10 기준)
+
+- **자동으로 도는 것**: `main`에 push하면 `test`(설치·빌드·검사, 비밀 없음) → `deploy`(산출물만 받아 Firebase에 배포) → `live`(라이브 헤더·공유 카드 확인)가 차례로 돈다.
+  PR을 열면 같은 검사가 `pr-check.yml`로 돈다. GitHub이 CodeQL·Dependabot 보안 알림·비밀 스캔(푸시 차단 포함)을 상시 감시한다.
+- **사람이 주기적으로 할 일**: **없음.** (견적 값은 행사 준비에 따라 사용자가 계산기에서 직접 고른다.)
+- **문제가 생기면 어디부터**: ① `node scripts/check-headers.js https://calc.edutogether.kr/` ② GitHub Actions의 최근 실행 ③ 화면이 통째로 비면 CSP 해시 불일치부터
+  의심한다(`.claude/rules/app.md`). 되돌리기는 [`_docs/ops/rollback.md`](_docs/ops/rollback.md) — Firebase 콘솔 릴리스 기록의 «롤백»이 1분 안에 끝난다.
+- **끝나는 날**: 행사 **2026-11-14**, 사이트는 **2026-11-15**에 내린다(아래).
+
 ## ⚠️ 운영 기간
 
 **2026-11-15까지만 운영한다.** 그날 예약 작업이 저장소를 아카이브한다. Firebase Hosting 사이트와
