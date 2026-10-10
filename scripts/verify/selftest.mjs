@@ -17,7 +17,7 @@ import { FREEZE_TAG } from './verify.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const V = path.join(ROOT, '.verify', 'selftest');
-const ONLY = '^(default|share|xlsx-export-default|print|nojs|tab-5|meet-16)$';
+const ONLY = 'default,share,xlsx-export-default,print,nojs,tab-5,meet-16';
 const COMBO = 'pc-light';
 
 // [이름, 원문, 바꿀 것, 잡혀야 하는 파일(정규식)]
