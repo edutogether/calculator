@@ -20,6 +20,9 @@ node_modules/
 .claude/first-run
 .claude/assistant-daemon-state.json
 
+# Codex 가 이 PC 에 남기는 로컬 설정 — _shared/CONVENTIONS.md §7 표준. 저장하지 않는다.
+.codex/
+
 # 전환 대조 도구(scripts/verify/)가 찍은 기준선·결과. 매번 freeze 태그에서 새로 찍으므로 저장하지 않는다.
 .verify/
 
