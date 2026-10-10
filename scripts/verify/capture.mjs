@@ -1,6 +1,6 @@
 /* 기준선(또는 전환 후 결과)을 찍는다.
  *
- *   node scripts/verify/capture.mjs --src <index.html 이 있는 폴더> --out <결과 폴더> [--only 정규식]
+ *   node scripts/verify/capture.mjs --src <index.html 이 있는 폴더> --out <결과 폴더> [--only 이름[,이름…]]
  *
  * 시나리오마다(scenarios.mjs) 뷰포트·라이트/다크 조합별로:
  *   <이름>/<뷰포트>-<테마>.png          전체 페이지 스크린샷(shot:'both'면 .view.png 도)
@@ -206,11 +206,12 @@ export async function capture({ src, out, only, combo }) {
   fs.mkdirSync(out, { recursive: true });
   const server = await startServer(src);
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  const re = only ? new RegExp(only) : null;
+  // 시나리오 이름을 쉼표로 이어 적는다(이름이 정확히 같은 것만). 사용자가 준 글을 정규식으로 해석하지 않는다.
+  const names = only ? only.split(',').map(s => s.trim()).filter(Boolean) : null;
   let n = 0;
   try {
     for (const sc of SCENARIOS) {
-      if (re && !re.test(sc.name)) continue;
+      if (names && !names.includes(sc.name)) continue;
       for (const [vp, scheme] of sc.combos) {
         if (combo && `${vp}-${scheme}` !== combo) continue;
         await runCombo(browser, server.url, src, out, sc, vp, scheme); n++; }
@@ -226,7 +227,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const a = process.argv.slice(2);
   const get = k => { const i = a.indexOf(k); return i >= 0 ? a[i + 1] : undefined; };
   const src = get('--src'), out = get('--out');
-  if (!src || !out) { console.error('사용법: capture.mjs --src <폴더> --out <폴더> [--only 정규식]'); process.exit(2); }
+  if (!src || !out) { console.error('사용법: capture.mjs --src <폴더> --out <폴더> [--only 이름[,이름…]]'); process.exit(2); }
   const t = Date.now();
   const n = await capture({ src: path.resolve(src), out: path.resolve(out), only: get('--only') });
   console.log(`찍음: ${n}개 조합, ${((Date.now() - t) / 1000).toFixed(0)}초 → ${out}`);

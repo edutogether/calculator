@@ -2,7 +2,7 @@
  *
  *   node scripts/verify/verify.mjs stability        기준선을 두 번 찍어 서로 대조 — 도구가 흔들리지 않는지(0건이어야 함)
  *   node scripts/verify/verify.mjs run <폴더>        기준선과 <폴더>(예: dist)를 **같은 때에** 찍어 대조
- *   node scripts/verify/verify.mjs run <폴더> --only 정규식
+ *   node scripts/verify/verify.mjs run <폴더> --only 이름[,이름…]
  *
  * 기준선은 저장해 두지 않고 매번 freeze 태그에서 꺼내 새로 찍는다 — 구글 폰트 파일처럼
  * 밖에서 오는 것이 시간이 지나 바뀌면, 오래전에 찍은 기준선과 오늘 찍은 결과가 앱과
@@ -54,7 +54,7 @@ if (cmd === 'stability') {
   console.log(`찍음: 기준선 ${n1}개 · 대조 ${n2}개 조합`);
   ok = report(`기준선(${FREEZE_TAG}) ↔ ${arg}`, compare(path.join(V, 'baseline'), path.join(V, 'candidate'), path.join(V, 'diff')));
 } else {
-  console.error('사용법: verify.mjs stability | run <폴더> [--only 정규식]'); process.exit(2);
+  console.error('사용법: verify.mjs stability | run <폴더> [--only 이름[,이름…]]'); process.exit(2);
 }
 console.log(`${((Date.now() - t) / 1000).toFixed(0)}초`);
 process.exit(ok ? 0 : 1);
