@@ -337,6 +337,10 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
         const zip = await checkZip(buf);
         if (zip === 'entries' || zip === 'unpacked') {
           big = ['파일이 너무 커요', `「${f.name}」은 풀면 가져올 수 있는 크기(20MB)나 항목 수(200개)를 넘어요.`];
+        } else if (zip === 'unsupported') {
+          fail('이 브라우저에서는 가져올 수 없어요',
+            `「${f.name}」이 안전한 크기인지 이 브라우저로는 확인할 수 없어요.\n\n최신 크롬·사파리·엣지에서 열어 가져오기를 해 주세요.`);
+          return;
         } else if (zip === 'broken') {
           throw new Error('zip');
         } else {

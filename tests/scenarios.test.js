@@ -465,6 +465,18 @@ describe('시나리오 19 — 가져오기는 풀면 아주 커지는 파일·�
     expect(text(win, '#dlgT')).toBe('파일이 너무 커요');
   });
 
+  it('풀어서 셀 수 없는 브라우저에서는, 풀린 크기를 거짓으로 적은 파일도 정상 파일도 읽지 않고 이유를 알려 준다', async () => {
+    for (const buf of [
+      buildZip([['xl/worksheets/sheet1.xml', sheetXml(25 * 1024 * 1024), 100]]),   // 선언은 100바이트, 실제는 25MB
+      small(),                                                                      // 정상 파일도 안전을 확인할 수 없으니 읽지 않는다
+    ]) {
+      const win = await loadApp();
+      const calls = await importFile(win, { buf, inflate: false });
+      expect(calls.read).toBe(0);
+      expect(text(win, '#dlgT')).toBe('이 브라우저에서는 가져올 수 없어요');
+    }
+  });
+
   it('풀린 크기를 작게 거짓으로 적은 압축 폭탄도 실제로 풀어 세어서 막는다', async () => {
     const win = await loadApp();
     const buf = buildZip([['xl/worksheets/sheet1.xml', sheetXml(25 * 1024 * 1024), 100]]);

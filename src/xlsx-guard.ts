@@ -10,7 +10,7 @@ export const IMPORT_MAX_UNPACKED = 20 * 1024 * 1024;
 export const IMPORT_MAX_ROWS = 1000;
 export const IMPORT_MAX_COLS = 100;
 
-export type ZipVerdict = 'ok' | 'entries' | 'unpacked' | 'broken';
+export type ZipVerdict = 'ok' | 'entries' | 'unpacked' | 'broken' | 'unsupported';
 
 /* 풀면 몇 바이트인지 센다 — 한도를 넘는 순간 멈춘다. 선언된 크기를 믿지 않으려는 것이다. */
 async function inflatedSize(data: Uint8Array, limit: number): Promise<number> {
@@ -25,7 +25,8 @@ async function inflatedSize(data: Uint8Array, limit: number): Promise<number> {
   }
 }
 
-/* zip(.xlsx)의 항목 수·풀린 크기를 본다. zip 이 아니면 'ok' — 그건 XLSX.read 가 판단한다. */
+/* zip(.xlsx)의 항목 수·풀린 크기를 본다. zip 이 아니면 'ok' — 그건 XLSX.read 가 판단한다.
+   풀어서 세는 기능(DecompressionStream)이 없는 브라우저는 선언된 크기를 믿을 수 없어 'unsupported' — 읽지 않는다. */
 export async function checkZip(buf: ArrayBuffer): Promise<ZipVerdict> {
   const u8 = new Uint8Array(buf), dv = new DataView(buf);
   let e = -1;
@@ -47,7 +48,8 @@ export async function checkZip(buf: ArrayBuffer): Promise<ZipVerdict> {
       if (csz === 0xFFFFFFFF || usz === 0xFFFFFFFF) return 'unpacked';
       declared += usz;
       if (usz > IMPORT_MAX_UNPACKED || declared > IMPORT_MAX_UNPACKED) return 'unpacked';
-      if (canInflate && method === 8) {
+      if (method === 8) {
+        if (!canInflate) return 'unsupported';
         if (lho + 30 > u8.length || dv.getUint32(lho, true) !== 0x04034b50) return 'broken';
         const start = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
         if (start + csz > u8.length) return 'broken';
