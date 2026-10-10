@@ -5,9 +5,8 @@
  * - 입력칸(수량·인원·횟수·인당 상한·지급액)과 체크박스는 **비제어**다. 원래 코드는 사람이 친 글자를
  *   그대로 두다가 정해진 순간(±단추, syncChecks(), render())에만 값을 썼다. 그 순간을 그대로 지키려고
  *   ref 로 그 순간에만 쓴다. 처음 마크업의 checked·value 속성도 원래처럼 권장 기본값이다.
- * - 그룹 머리 체크박스는 줄 하나를 끌 때 따라 바뀌지 않는다(syncChecks() 때만 맞춰진다). 원래 그랬다.
- * - 절사 단위 단추의 선택 표시는 단추를 누르거나 자동 계산이 바꿀 때만 바뀐다(#q= 로 500원이
- *   들어와도 1,000원이 선택된 채로 보인다). 원래 그랬다.
+ * (전환 때 일부러 남겨 둔 "구분 머리 체크박스가 줄 하나를 끌 때 안 따라옴"·"#q= 로 500원이 들어와도 1,000원이 선택돼 보임"은
+ *  2026-10-10 종합감사에서 결함으로 판정해 고쳤다 — syncGroups()·절사 단위 단추의 처음 값.)
  * - render() 자리는 flushSync(commit) 이다 — 원래처럼 그 자리에서 곧바로 화면이 바뀐다.
  * 이런 것들은 _docs/intents/2026-09-25-react-ts-conversion 의 "전환 중 발견한 것"에 적어 두었다. */
 import {
@@ -48,6 +47,10 @@ function syncChecks(): void {
     const c = refs.rowOn.get(it.id); if (c) c.checked = it.on;
     const q = refs.rowQty.get(it.id); if (q) q.value = String(it.qty);
   });
+  syncGroups();
+}
+/* 구분 머리의 «전체 선택» 칸 — 그 구분의 줄이 전부 켜져 있을 때만 체크된다. 줄 하나를 켜고 끌 때도 맞춘다. */
+function syncGroups(): void {
   groups.forEach(g => { const c = refs.grp.get(g); if (c) c.checked = D.filter(d => d.g === g).every(d => d.on); });
 }
 /* render() 가 입력칸에 하던 일 — 부스 몫 칸, 지급액 칸(입력 중이 아니면), 인당 상한 칸(입력 중이 아니면). */
@@ -103,7 +106,8 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
   useSyncExternalStore(subscribe, getVersion);
   const [cur, setCur] = useState(SECS[0]);
   const [man, setManState] = useState(man0);
-  const [unit, setUnit] = useState<Unit>('init');
+  // 절사 단위 단추: 주소(#q=)로 500원이 들어왔으면 처음부터 500원이 선택돼 보여야 한다(안내문은 M.unit 으로 말한다).
+  const [unit, setUnit] = useState<Unit>(M.unit === 500 ? '500' : 'init');
   const [pAllText, setPAllText] = useState('전체 선택');
   const [shareText, setShareText] = useState('공유하기');
   const [shareBusy, setShareBusy] = useState(false);
@@ -199,7 +203,7 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
   /* ── 동작 */
   function onRowClick(it: Item, act: string, e: MouseEvent<HTMLElement>): void {
     if (act === 'open') { openOpts(it); return; }
-    if (act === 'on') it.on = (e.currentTarget as HTMLInputElement).checked;
+    if (act === 'on') { it.on = (e.currentTarget as HTMLInputElement).checked; syncGroups(); }
     if (act === 'm') { it.qty = Math.max(0, it.qty - 1); (refs.rowQty.get(it.id) as HTMLInputElement).value = String(it.qty); }
     if (act === 'p') { it.qty = it.qty + 1; (refs.rowQty.get(it.id) as HTMLInputElement).value = String(it.qty); }
     render();
@@ -308,12 +312,18 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
     const input = e.currentTarget;
     const f = (input.files as FileList)[0]; if (!f) return;
     const setB = (t: string): void => flushSync(() => setImpText(t));
+    try { await importFile(f, setB); }
+    finally {
+      // 성공이든 실패든 — 같은 파일을 다시 고를 수 있게 칸을 비우고, 단추 글자를 되돌린다(예전에는 실패하면 «가져오지 못했어요»가 계속 남았다).
+      input.value = '';
+      setTimeout(() => setB('가져오기'), 2600);
+    }
+  }
+  async function importFile(f: File, setB: (t: string) => void): Promise<void> {
     const fail = (t: string, body: string): void => { dialog(t, body, null); setB('가져오지 못했어요'); };
     // 너무 큰 파일은 읽기 전에 돌려보낸다(탭이 멈추지 않게 — 한도는 src/xlsx-guard.ts)
     const tooBig = (t: string, body: string): void => {
       fail(t, body + '\n\n이 계산기의 「엑셀로 저장」으로 만든 파일은 훨씬 작아요. 그 파일을 올려 주세요.');
-      input.value = '';
-      setTimeout(() => setB('가져오기'), 2600);
     };
     if (f.size > IMPORT_MAX_BYTES) {
       tooBig('파일이 너무 커요', `「${f.name}」은 ${Math.ceil(f.size / 1048576)}MB 로, 가져올 수 있는 크기(10MB)를 넘어요.`);
@@ -392,8 +402,6 @@ export function App({ man0, meet0 }: { man0: boolean; meet0: boolean }): ReactNo
         + '「엑셀로 저장」으로 받은 파일을 고치지 않은 채로 올려 보시고, '
         + '그래도 안 되면 이 화면을 알려 주세요.');
     }
-    input.value = '';
-    setTimeout(() => setB('가져오기'), 2600);
   }
 
   function rowsOut(): { R: (string | number)[][]; tot: number } {

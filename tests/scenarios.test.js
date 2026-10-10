@@ -233,6 +233,7 @@ describe('시나리오 9 — 인당 지원금액(#mCap)과 지급액(#mPer)의 �
 
   it('그 칸에 지금 포커스가 있으면(입력 중) 값을 다시 그려 덮어쓰지 않는다', async () => {
     const win = await loadApp();
+    await click(win, '#tabs .tab:last-child');      // 협의회 탭 — 보이지 않는 칸에는 (새 jsdom 도, 실제 브라우저도) 포커스가 가지 않는다
     $(win, '#mCap').focus();
     await type(win, '#mCap', '4500');               // 치는 중 — 화면이 다시 그려진다
     expect(win.document.activeElement).toBe($(win, '#mCap'));
@@ -495,5 +496,35 @@ describe('시나리오 19 — 가져오기는 풀면 아주 커지는 파일·�
     const calls = await importFile(win, { buf: small(), ref: 'A1:CV1000', rows: [['공통', '포켓 Wi-Fi', '코리아와이파이 5G 10GB (U50)', '5G · 10GB/일', 1, 20900, 0]] });
     expect(calls.toJson).toBe(1);
     expect(text(win, '#pImp')).toBe('1개 반영됨');
+  });
+});
+
+describe('시나리오 20 — 화면이 모델과 같은 말을 한다: 가져오기 실패 뒤 복귀·구분 머리 체크·절사 단위 단추 (2026-10-10 종합감사)', () => {
+  it('가져오기가 실패해도 단추 글자가 «가져오기»로 돌아온다(예전에는 «가져오지 못했어요»가 계속 남았다)', async () => {
+    const win = await loadApp();
+    const rows = [['공통', '이 계산기에 없는 품목', '', '', 1, 1000, 1000]];
+    await importRows(win, rows);
+    expect(text(win, '#pImp')).toBe('가져오지 못했어요');
+    await new Promise(r => setTimeout(r, 2900));
+    expect(text(win, '#pImp')).toBe('가져오기');
+  }, 10000);
+
+  it('구분 머리의 «전체 선택» 칸이 줄 하나를 끄고 켤 때 따라 바뀐다', async () => {
+    const win = await loadApp();
+    const head = $(win, 'input[data-grp="공통"]');
+    head.click(); await tick();                                  // 공통을 전부 켠다
+    expect($(win, 'input[data-grp="공통"]').checked).toBe(true);
+    await click(win, '#body .row[data-i="0"] [data-act="on"]');  // 줄 하나를 끈다
+    expect($(win, 'input[data-grp="공통"]').checked).toBe(false);
+    await click(win, '#body .row[data-i="0"] [data-act="on"]');  // 다시 켠다
+    expect($(win, 'input[data-grp="공통"]').checked).toBe(true);
+  });
+
+  it('주소(#q=)로 절사 500원이 들어오면 500원 단추가 선택돼 보이고, 안내문과 같은 말을 한다', async () => {
+    const win = await loadApp('q=' + encodeState({ v: 1, a: [], m: [10, 1, 40000, 500, 0, 20000] }));
+    expect($(win, '#u500').classList.contains('on')).toBe(true);
+    expect($(win, '#u1000').classList.contains('on')).toBe(false);
+    const plain = await loadApp();
+    expect($(plain, '#u1000').classList.contains('on')).toBe(true);
   });
 });
