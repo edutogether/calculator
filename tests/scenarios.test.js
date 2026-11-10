@@ -540,3 +540,17 @@ describe('시나리오 20 — 화면이 모델과 같은 말을 한다: 가져�
     expect($(plain, '#u1000').classList.contains('on')).toBe(true);
   });
 });
+
+describe('시나리오 21 — 「움직임 줄이기」 신호가 있어도 앱은 똑같이 움직인다 (2026-11-11 대표 결정)', () => {
+  it('산출물 어디에도 prefers-reduced-motion 조건이 없다(스타일·스크립트 모두)', () => {
+    expect(HTML).not.toMatch(/prefers-reduced-motion/i);
+    expect(HTML).not.toMatch(/reducedMotion/i);
+  });
+
+  it('움직임을 정하는 규칙(게이지 전환·번쩍임·카톡 카드 단추 전환·안내 말풍선)이 산출물에 그대로 있다', () => {
+    expect(HTML).toMatch(/.gauge i{[^}]*transition:width .25s/);
+    expect(HTML).toMatch(/.flash{animation:flash 1.1s ease}/);
+    expect(HTML).toMatch(/.nojs .btns a{[^}]*transition:transform/);
+    expect(HTML).toMatch(/animation:tipPop 2.6s ease forwards/);
+  });
+});
