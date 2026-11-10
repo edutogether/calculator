@@ -601,6 +601,14 @@ Firebase로 옮긴 뒤로는 예약 작업이 저장소를 아카이브하는 �
   없는 실제 브라우저 렌더링·인쇄 레이아웃 회귀가 반복해서 나오는 경우) — 그때는 헤드리스
   브라우저 기반 E2E를 CI에 정식으로 편입하는 것을 재검토한다.
 
+## 🟠 움직임 줄이기 신호로 멈추지 않는다 — 확인은 reduce·no-preference 둘 다 (2026-11-11 대표 결정)
+
+Bumm님이 이 PC에 원격으로 들어와 앱을 열었더니 브라우저가 «움직임 줄이기»(`prefers-reduced-motion: reduce`)를 켠 채로 보고해, 게이지 전환·번쩍임·카톡 카드 안내 말풍선이 멈춰 보였다. Bumm님은 그 설정을 켠 적이 없다.
+**대표 결정: 여덟 앱 모두, 움직임 줄이기와 상관없이 늘 정상처럼 돈다.** 그래서 `index.html`의 `@media(prefers-reduced-motion:reduce)` 블록을 통째로 걷어냈다(화면 변화는 신호가 켜진 환경에서만 생긴다).
+- **다시 넣지 말 것**: 스타일에도 스크립트(`matchMedia`)에도. 시나리오 21이 산출물 소스에 이 조건이 없는지 본다.
+- **확인은 두 조건 모두로 한다**: `npm run verify:motion`(실제 브라우저를 reduce·no-preference로 열어 움직임 값이 같고 살아 있는지 대조, 주소를 주면 라이브도 본다). `scripts/verify/capture.mjs`는 `reduced-*` 시나리오만 reduce로, 나머지는 no-preference로 연다 — 둘 다 같은 화면이어야 한다.
+- 이 파일의 옛 기록(`_docs/intents/2026-09-25-react-ts-conversion/intent.md`)에 `prefers-reduced-motion`이 «원본과 같게 옮긴 것»으로 남아 있는 것은 이력이다.
+
 ## 🟡 감사 기록 — 2026-10-31 수시 종합감사 (10/10, 전제 재확인)
 
 `package.json`의 `overrides`(개발 도구가 끌어오는 하위 패키지 한 곳을 한 단계 높은 주 버전으로 고정)는 `npm audit` 0건을 지키려는 것이다 — 개발 도구 안에서만 쓰여 배포물에는 들어가지 않는다. 상류(eslint)가 고치면 이 항목을 걷어낸다. 구조적 상한 전제(서버·DB·저장·종량제 API 없음)는 그대로다. 열린 Dependabot 알림은 판올림 뒤에도 GitHub 쪽 재평가가 늦어 한동안 열려 있을 수 있다 — 손으로 닫지 않는다.

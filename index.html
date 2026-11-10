@@ -377,17 +377,8 @@ html.js .nojs{display:none !important}
   100%{opacity:0;transform:translate(-50%,6px)}}
 @media(min-width:901px){.wrap{padding-bottom:26px}}
 
-/* 움직임을 줄여 달라고 설정한 사용자에게는 움직임만 뺀다 — 기능은 그대로 남긴다.
-   특히 안내 말풍선은 tipPop이 투명도를 0에서 1로 올려 보여주는 구조라, 애니메이션만
-   끄면 영영 안 보인다. 그래서 «끄기»가 아니라 «보이는 상태로 고정»이다.
-   _shared/CONVENTIONS.md §5.6-2 */
-@media(prefers-reduced-motion:reduce){
-  .gauge i{transition:none}
-  .flash{animation:none}
-  .nojs .btns a{transition:none}
-  .nojs .btns a:hover .tip,.nojs .btns a:focus .tip,.nojs .btns a:active .tip{
-    animation:none;opacity:1;transform:translate(-50%,0)}
-}
+/* 움직임(게이지 전환·번쩍임·안내 말풍선)은 브라우저의 «움직임 줄이기» 설정과 상관없이 늘 같게 돈다 — 대표 결정(2026-11-11).
+   원격 접속 같은 환경에서 브라우저가 이 설정을 켠 채로 보고하면 연출이 멈춰 보이기 때문이다. 이 자리에 설정별 조건 규칙을 다시 넣지 말 것. */
 </style>
 <div class="top"><div class="in">
   <div><h1>InKY Cinema Festival 견적 같이뽑아요 💛</h1>
