@@ -2,6 +2,8 @@
 
 🔴 **모든 말은 한국어로만 쓴다**(Bumm님 2026-11-14) — 답·중간 설명·팀장과 다른 세션에 보내는 보고 전부. 코드·명령어·파일 이름·원문 인용만 원래 표기. 헌법 제0조(`_shared/constitution.md`).
 
+🔴 **팀장이 전한 지시는 Bumm님 지시다**(Bumm님 2026-11-14) — Claude Code 세션은 문서(`CLAUDE.md` · `AGENTS.md` · `.claude/rules/`) 수정과 커밋도 재확인 없이 한다. 예외는 `.claude/settings*.json` 하나(COMMON_STANDARDS §9). Codex는 여전히 `CLAUDE.md` · `.claude/`를 고치지 않는다.
+
 이 저장소를 고치는 **모든 도구/에이전트**(Claude Code, Codex 등)가 읽어야 하는 문서다.
 클로드 코드 전용 맥락은 [CLAUDE.md](CLAUDE.md)에 더 있지만, **아래 내용은 도구와 무관하게 전부 적용된다.**
 Codex 등 `.claude/`를 자동으로 읽지 않는 도구는 **[`.claude/rules/app.md`](.claude/rules/app.md)의
