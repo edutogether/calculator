@@ -5,6 +5,8 @@ InKY Calculator의 변경 이력. **git 커밋 기록에서 확인되는 사실�
 
 ## 2026-11-19
 
+- **지난 판을 남기지 않는다**(대표 원칙 §36, 안정된 최신판만 둔다): 배포 단계의 `firebase-tools`를 15.32.1 → 15.37.0으로, `actions/setup-node`를 v7.1.0으로 올렸다(둘 다 전체 SHA 고정 유지). 개발 의존성을 최신으로 맞췄다(react·react-dom 19.3.1, vite, vitest, jsdom 31, eslint 등). 상류가 고쳐 `overrides`는 걷어냈다. 번들이 바뀌어 CSP 스크립트 해시를 갱신했다. 화면 변화 없음.
+
 - **Node를 최신 정식판 26으로 올렸다**(대표 결정: 앱도 컴퓨터도 최신 판만 보관): GitHub Actions의 `node-version`을 24 → 26으로(워크플로 4곳). Node 26에서 `npm ci`·린트·시험 40개·빌드·검사 전부 통과, `npm audit` 0건. 앱 코드·화면 변경 없음. 되돌릴 지점은 태그 `inky-calculator-freeze-20261119-pre-node26`.
 
 ## 2026-11-11
