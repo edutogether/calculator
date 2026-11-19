@@ -39,8 +39,8 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7
         with:
-          # 검사 스크립트를 돌릴 Node. 20 은 2026-04 로 지원이 끝나 러너와 같은 24 로 맞춘다.
-          node-version: '24'
+          # 검사 스크립트를 돌릴 Node. 20 은 2026-04 로 지원이 끝나 최신 정식판(LTS) 26 으로 맞춘다(2026-11-19 대표 결정: 앱도 컴퓨터도 최신 판만 둔다).
+          node-version: '26'
 
       # 빌드·검사 의존성(devDependencies) 설치 — 배포되는 것은 dist/ 뿐이다.
       - name: 의존성 설치
@@ -174,7 +174,7 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7
         with:
-          node-version: '24'
+          node-version: '26'
 
       - name: 산출물 내려받기 (dist/)
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
@@ -246,7 +246,7 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7
         with:
-          node-version: '24'
+          node-version: '26'
 
       - name: 산출물 내려받기 (dist/)
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2

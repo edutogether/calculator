@@ -3,6 +3,10 @@
 InKY Calculator의 변경 이력. **git 커밋 기록에서 확인되는 사실만** 적는다 — 확인 안 되는 것은
 적지 않는다(DOC-STANDARD 원칙). 날짜는 커밋 메시지의 승인 날짜 기준.
 
+## 2026-11-19
+
+- **Node를 최신 정식판 26으로 올렸다**(대표 결정: 앱도 컴퓨터도 최신 판만 보관): GitHub Actions의 `node-version`을 24 → 26으로(워크플로 4곳). Node 26에서 `npm ci`·린트·시험 40개·빌드·검사 전부 통과, `npm audit` 0건. 앱 코드·화면 변경 없음. 되돌릴 지점은 태그 `inky-calculator-freeze-20261119-pre-node26`.
+
 ## 2026-11-11
 
 - **움직임 줄이기 신호와 상관없이 연출이 늘 돈다**(대표 결정, 여덟 앱 공통): `index.html`의 `prefers-reduced-motion` 블록을 걷어냈다 — 게이지 전환·번쩍임·카톡 카드 안내 말풍선이 그 설정에 멈추지 않는다. CSP 스타일 해시 갱신. 시험 40개(시나리오 21), `npm run verify:motion` 추가.
