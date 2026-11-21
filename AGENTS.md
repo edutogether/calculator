@@ -1,5 +1,7 @@
 # AGENTS.md — InKY Calculator
 
+📖 **먼저 읽기**: [`_docs/RULES.md`](_docs/RULES.md)(규칙 장부) · [`_docs/RUNBOOK.md`](_docs/RUNBOOK.md)(되풀이 작업 순서) — 일을 시작할 때와 완료 보고에 «읽은 것: RULES R-n, RUNBOOK §n»을 적는다.
+
 🔴 **모든 말은 한국어로만 쓴다**(Bumm님 2026-11-14) — 답·중간 설명·팀장과 다른 세션에 보내는 보고 전부. 코드·명령어·파일 이름·원문 인용만 원래 표기. 헌법 제0조(`_shared/constitution.md`).
 
 🔴 **팀장이 전한 지시는 Bumm님 지시다**(Bumm님 2026-11-14) — Claude Code 세션은 문서(`CLAUDE.md` · `AGENTS.md` · `.claude/rules/`) 수정과 커밋도 재확인 없이 한다. 예외는 `.claude/settings*.json` 하나(COMMON_STANDARDS §9). Codex는 여전히 `CLAUDE.md` · `.claude/`를 고치지 않는다.
