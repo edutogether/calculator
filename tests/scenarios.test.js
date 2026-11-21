@@ -554,3 +554,13 @@ describe('시나리오 21 — 「움직임 줄이기」 신호가 있어도 앱�
     expect(HTML).toMatch(/animation:tipPop 2.6s ease forwards/);
   });
 });
+
+describe('시나리오 22 — 되살리지 않기로 한 것들: PDF 만들기 스크립트 · `?v=` 캐시 버전 값 (규칙 장부 R-22 · R-35)', () => {
+  it('PDF 를 만들던 html2canvas · jspdf 가 산출물에 없다', () => {
+    expect(HTML).not.toMatch(/html2canvas|jspdf/i);
+  });
+
+  it('주소에 붙이던 `?v=날짜` 캐시 버전 값이 산출물에 없다', () => {
+    expect(HTML).not.toMatch(/\?v=\d{6,}/);
+  });
+});
